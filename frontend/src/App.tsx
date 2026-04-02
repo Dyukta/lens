@@ -1,19 +1,19 @@
-function App() {
+import { Routes, Route, Navigate } from 'react-router-dom'
+import Home from './pages/Home'
+import Dashboard from './pages/Dashboard'
+import  { useAppStore } from './store/useAppStore'
+
+export default function App() {
+  const parsedCSV = useAppStore((state) => state.parsedCSV)
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center">
-      <div className="bg-white rounded-2xl shadow-xl p-10 text-center">
-        <h1 className="text-4xl font-bold text-gray-800 mb-4">
-          Tailwind is working 🚀
-        </h1>
-        <p className="text-gray-600 mb-6">
-          Your setup is clean and ready.
-        </p>
-        <button className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
-          Continue
-        </button>
-      </div>
-    </div>
+    <Routes>
+      <Route path="/" element={<Home />} />
+      <Route
+        path="/dashboard"
+        element={parsedCSV ? <Dashboard /> : <Navigate to="/" replace />}
+      />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   )
 }
-
-export default App
