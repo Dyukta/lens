@@ -1,8 +1,8 @@
-import Anthropic from '@anthropic-ai/sdk'
+import OpenAI from 'openai'
 import { DataSummary, Insight, ChatHistoryItem } from '../types'
 
-const client = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
+const client = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
 })
 
 function buildSummaryText(summary: DataSummary): string {
@@ -16,64 +16,59 @@ function buildSummaryText(summary: DataSummary): string {
   for (const col of summary.columns) {
     if (col.type === 'numeric') {
       lines.push(
-        `  • ${col.name} [numeric] — min: ${col.min ?? 'n/a'}, max: ${col.max ?? 'n/a'}, mean: ${
+        `• ${col.name} [numeric] — min: ${col.min ?? 'n/a'}, max: ${col.max ?? 'n/a'}, mean: ${
           col.mean !== undefined ? col.mean.toFixed(2) : 'n/a'
         }, nulls: ${col.nullCount}`
       )
     } else if (col.type === 'categorical') {
       lines.push(
-        `  • ${col.name} [categorical] — ${col.uniqueCount} unique values, top: ${
+        `• ${col.name} [categorical] — ${col.uniqueCount} unique, top: ${
           col.topValues?.join(', ') ?? 'n/a'
         }, nulls: ${col.nullCount}`
       )
     } else if (col.type === 'date') {
       lines.push(
-        `  • ${col.name} [date] — ${col.uniqueCount} unique dates, nulls: ${col.nullCount}`
+        `• ${col.name} [date] — ${col.uniqueCount} unique, nulls: ${col.nullCount}`
       )
     } else {
-      lines.push(`  • ${col.name} [unknown] — nulls: ${col.nullCount}`)
+      lines.push(`• ${col.name} [unknown] — nulls: ${col.nullCount}`)
     }
   }
 
   return lines.join('\n')
 }
 
-function extractText(content: any[]): string {
-  return content
-    .filter((b) => b.type === 'text')
-    .map((b) => b.text)
-    .join('')
-    .trim()
-}
-
 export async function generateInsights(summary: DataSummary): Promise<Insight[]> {
-  const prompt = `You are a data analyst. Analyze this CSV dataset summary and return exactly 4-6 insights as a JSON array.
+  const prompt = `
+Analyze this dataset and return 4-6 insights.
 
-Dataset Summary:
 ${buildSummaryText(summary)}
 
-Return ONLY a valid JSON array. No markdown, no explanation, just the array.
-Each object must have:
-- id
-- title
-- description
-- type ("trend" | "anomaly" | "correlation" | "distribution" | "summary")`
+Return ONLY JSON array:
+[
+ { id, title, description, type }
+]
+
+type must be one of:
+"trend" | "anomaly" | "correlation" | "distribution" | "summary"
+`
 
   try {
-    const response = await client.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 1024,
+    const res = await client.chat.completions.create({
+      model: 'gpt-4o-mini',
       messages: [{ role: 'user', content: prompt }],
+      temperature: 0.3,
     })
 
-    const raw = extractText(response.content).replace(/```json|```/g, '').trim()
+    const raw = res.choices[0]?.message?.content || '[]'
+
     const parsed = JSON.parse(raw)
 
     return Array.isArray(parsed) ? parsed : []
   } catch {
     return [
       {
-        id: 'ins-fallback',
+        id: 'fallback',
         title: 'Dataset loaded',
         description: `${summary.rowCount} rows and ${summary.columnCount} columns detected.`,
         type: 'summary',
@@ -87,33 +82,34 @@ export async function answerQuestion(
   summary: DataSummary,
   history: ChatHistoryItem[]
 ): Promise<string> {
-  const system = `You are Lens, a data analyst assistant.
+  const system = `
+You are a data analyst.
 
 Dataset:
 ${buildSummaryText(summary)}
 
 Rules:
 - Be concise
-- Use actual column names and values
-- Say if unknown
-- Keep under 150 words`
+- Use real column names
+- Max 120 words
+`
 
   try {
-    const response = await client.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 512,
-      system,
+    const res = await client.chat.completions.create({
+      model: 'gpt-4o-mini',
       messages: [
+        { role: 'system', content: system },
         ...history.map((h) => ({
           role: h.role,
           content: h.content,
         })),
         { role: 'user', content: question },
       ],
+      temperature: 0.4,
     })
 
-    return extractText(response.content)
+    return res.choices[0]?.message?.content || 'No response'
   } catch {
-    return 'Failed to generate response. Check backend connection.'
+    return 'Failed to generate response.'
   }
 }
