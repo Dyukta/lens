@@ -1,157 +1,214 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, SunMedium, Moon, RefreshCw } from 'lucide-react'
-
+import { ArrowLeft, RefreshCw, SunMedium } from 'lucide-react'
 import { useAppStore } from '../store/useAppStore'
 import { useChartConfig } from '../hooks/useChartConfig'
-
 import ChartPanel from '../components/ChartPanel'
 import InsightCard from '../components/InsightCard'
 import ChatBox from '../components/ChatBox'
 
-import type { ColumnStats, Insight } from '../types'
-
 export default function Dashboard() {
   const navigate = useNavigate()
-  const [dark, setDark] = useState(true)
-
+  const [, setDark] = useState(true)
   const { parsedCSV, insights, isLoadingInsights, setCharts } = useAppStore()
   const charts = useChartConfig(parsedCSV)
 
-  useEffect(() => {
-    setCharts(charts)
-  }, [charts, setCharts])
+  useEffect(() => { setCharts(charts) }, [charts, setCharts])
 
   if (!parsedCSV) return null
-
   const { summary } = parsedCSV
 
-  const numericCount = summary.columns.filter(
-    (c: ColumnStats) => c.type === 'numeric'
-  ).length
-
-  const categoricalCount = summary.columns.filter(
-    (c: ColumnStats) => c.type === 'categorical'
-  ).length
-
-  const dateCount = summary.columns.filter(
-    (c: ColumnStats) => c.type === 'date'
-  ).length
+  // Only show non-zero type counts in stat strip
+  const statStrip = [
+    { label: 'Rows',        value: summary.rowCount.toLocaleString() },
+    { label: 'Columns',     value: summary.columnCount },
+    { label: 'Numeric',     value: summary.columns.filter((c) => c.type === 'numeric').length },
+    { label: 'Categorical', value: summary.columns.filter((c) => c.type === 'categorical').length },
+    ...(summary.columns.some((c) => c.type === 'date')
+      ? [{ label: 'Date', value: summary.columns.filter((c) => c.type === 'date').length }]
+      : []),
+  ]
 
   return (
-    <div className="min-h-screen bg-bg-base text-text-primary">
-    
-      <header className="sticky top-0 z-20 flex items-center justify-between px-6 py-4 border-b border-bg-border bg-bg-base/80 backdrop-blur-sm">
-        <div className="flex items-center gap-3">
+    <div style={{ minHeight: '100vh', background: '#0a0a0f', color: '#e8e8f0' }}>
+
+      {/* Header */}
+      <header style={{
+        position: 'sticky', top: 0, zIndex: 20,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '14px 24px',
+        borderBottom: '1px solid #1e1e2e',
+        background: 'rgba(10,10,15,0.85)',
+        backdropFilter: 'blur(12px)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <button
             onClick={() => navigate('/')}
-            className="p-2 rounded-lg hover:bg-bg-elevated text-text-secondary hover:text-text-primary transition-colors"
+            style={{
+              padding: 8, borderRadius: 8, border: 'none', background: 'transparent',
+              color: '#8888a8', cursor: 'pointer', display: 'flex', alignItems: 'center',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = '#181825'; e.currentTarget.style.color = '#e8e8f0' }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#8888a8' }}
           >
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowLeft style={{ width: 16, height: 16 }} />
           </button>
 
           <div>
-            <div className="flex items-center gap-2">
-              <div className="w-5 h-5 rounded-md bg-gradient-lens flex items-center justify-center">
-                <span className="text-white font-display font-bold text-[10px]">
-                  L
-                </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{
+                width: 20, height: 20, borderRadius: 6,
+                background: 'linear-gradient(135deg, #7c5cfc, #5c8cfc)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <span style={{ color: 'white', fontWeight: 700, fontSize: 10, fontFamily: 'Syne, sans-serif' }}>L</span>
               </div>
-              <span className="font-display font-semibold text-text-primary">
-                Lens
-              </span>
+              <span style={{ fontFamily: 'Syne, sans-serif', fontWeight: 600, color: '#e8e8f0' }}>Lens</span>
             </div>
-
-            <p className="text-text-muted text-xs mt-0.5 font-mono">
+            <p style={{ color: '#44445a', fontSize: 11, marginTop: 2, fontFamily: 'JetBrains Mono, monospace' }}>
               {summary.fileName} · {summary.rowCount.toLocaleString()} rows
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <button
-            onClick={() => setDark((prev) => !prev)}
-            className="p-2 rounded-lg hover:bg-bg-elevated text-text-secondary hover:text-text-primary transition-colors"
+            onClick={() => setDark((d) => !d)}
+            style={{
+              padding: 8, borderRadius: 8, border: 'none', background: 'transparent',
+              color: '#8888a8', cursor: 'pointer',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = '#181825' }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
           >
-            {dark ? (
-              <SunMedium className="w-4 h-4" />
-            ) : (
-              <Moon className="w-4 h-4" />
-            )}
+            <SunMedium style={{ width: 16, height: 16 }} />
           </button>
-
           <button
             onClick={() => navigate('/')}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-bg-elevated border border-bg-border text-text-secondary hover:text-text-primary text-sm transition-colors"
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              padding: '6px 12px', borderRadius: 8,
+              border: '1px solid #1e1e2e', background: '#181825',
+              color: '#8888a8', fontSize: 13, cursor: 'pointer',
+              fontFamily: 'DM Sans, sans-serif',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.color = '#e8e8f0' }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = '#8888a8' }}
           >
-            <RefreshCw className="w-3.5 h-3.5" />
+            <RefreshCw style={{ width: 13, height: 13 }} />
             New Upload
           </button>
         </div>
       </header>
 
-      {/* BODY */}
-      <div className="flex h-[calc(100vh-65px)]">
-        {/* LEFT */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-8">
-          {/* STATS */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {[
-              { label: 'Rows', value: summary.rowCount.toLocaleString() },
-              { label: 'Columns', value: summary.columnCount },
-              { label: 'Numeric', value: numericCount },
-              { label: 'Categorical', value: categoricalCount },
-              { label: 'Date', value: dateCount }
-            ].map((item) => (
-              <div
-                key={item.label}
-                className="bg-bg-surface border border-bg-border rounded-xl px-4 py-3"
-              >
-                <p className="text-text-muted text-xs">{item.label}</p>
-                <p className="text-text-primary font-display font-semibold text-xl mt-0.5">
-                  {item.value}
-                </p>
+      <div style={{ display: 'flex', height: 'calc(100vh - 65px)' }}>
+
+        {/* Main content */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: 24, display: 'flex', flexDirection: 'column', gap: 32 }}>
+
+          {/* Stat strip */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: `repeat(${statStrip.length}, 1fr)`,
+            gap: 12,
+          }}>
+            {statStrip.map(({ label, value }) => (
+              <div key={label} style={{
+                background: '#11111a', border: '1px solid #1e1e2e',
+                borderRadius: 14, padding: '14px 18px',
+              }}>
+                <p style={{ color: '#44445a', fontSize: 12 }}>{label}</p>
+                <p style={{
+                  color: '#e8e8f0', fontFamily: 'Syne, sans-serif',
+                  fontWeight: 700, fontSize: 28, marginTop: 4,
+                }}>{value}</p>
               </div>
             ))}
           </div>
 
-          {/* CHARTS */}
+          {/* Charts section */}
           <section>
-            <h2 className="text-text-primary font-display font-semibold mb-4">
+            <h2 style={{
+              color: '#e8e8f0', fontFamily: 'Syne, sans-serif',
+              fontWeight: 600, marginBottom: 16,
+              display: 'flex', alignItems: 'center', gap: 8,
+            }}>
+              <span style={{
+                width: 20, height: 20, borderRadius: 6,
+                background: 'rgba(124,92,252,0.2)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: '#7c5cfc', fontSize: 11,
+              }}>▦</span>
               Charts
             </h2>
 
             {charts.length === 0 ? (
-              <div className="bg-bg-surface border border-bg-border rounded-2xl h-48 flex items-center justify-center text-text-muted text-sm">
+              <div style={{
+                background: '#11111a', border: '1px solid #1e1e2e',
+                borderRadius: 16, height: 192,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: '#44445a', fontSize: 14,
+              }}>
                 Not enough data to generate charts
               </div>
             ) : (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {charts.map((chart, i) => (
-                  <ChartPanel key={i} config={chart} />
-                ))}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                {charts.map((chart, i) => <ChartPanel key={i} config={chart} />)}
               </div>
             )}
           </section>
 
-          {/* INSIGHTS */}
+          {/* Insights section */}
           <section>
-            <h2 className="text-text-primary font-display font-semibold mb-4">
+            <h2 style={{
+              color: '#e8e8f0', fontFamily: 'Syne, sans-serif',
+              fontWeight: 600, marginBottom: 16,
+              display: 'flex', alignItems: 'center', gap: 8,
+            }}>
+              <span style={{
+                width: 20, height: 20, borderRadius: 6,
+                background: 'rgba(92,140,252,0.2)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: '#5c8cfc', fontSize: 11,
+              }}>◎</span>
               Insights
             </h2>
 
-            <div className="space-y-3">
-              {/* SUMMARY CARD */}
-              <div className="bg-bg-surface border border-bg-border rounded-xl p-4">
-                <p className="text-text-primary text-sm font-medium mb-2">
-                  {summary.rowCount.toLocaleString()} rows loaded
-                </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
 
-                <div className="flex flex-wrap gap-2">
-                  {summary.columns.map((col: ColumnStats) => (
+              {/* Rows loaded card */}
+              <div style={{
+                background: '#11111a', border: '1px solid #1e1e2e',
+                borderRadius: 14, padding: 16,
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                  <div style={{
+                    width: 8, height: 8, borderRadius: '50%',
+                    background: '#7c5cfc',
+                    boxShadow: '0 0 6px rgba(124,92,252,0.6)',
+                  }} />
+                  <span style={{ color: '#e8e8f0', fontSize: 14, fontWeight: 500 }}>
+                    {summary.rowCount.toLocaleString()} rows loaded
+                  </span>
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {summary.columns.map((col) => (
                     <span
                       key={col.name}
-                      className="px-2 py-1 text-xs border rounded"
+                      style={{
+                        padding: '4px 10px', borderRadius: 8, fontSize: 12,
+                        fontFamily: 'JetBrains Mono, monospace',
+                        background: '#181825',
+                        border: `1px solid ${
+                          col.type === 'numeric' ? 'rgba(92,252,168,0.3)' :
+                          col.type === 'categorical' ? 'rgba(124,92,252,0.3)' :
+                          col.type === 'date' ? 'rgba(92,140,252,0.3)' : 'rgba(30,30,46,1)'
+                        }`,
+                        color:
+                          col.type === 'numeric' ? '#5cfca8' :
+                          col.type === 'categorical' ? '#a08cfc' :
+                          col.type === 'date' ? '#5c8cfc' : '#44445a',
+                      }}
                     >
                       {col.name}
                     </span>
@@ -159,29 +216,64 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              {/* LOADING */}
-              {isLoadingInsights ? (
-                <div className="space-y-3">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="h-16 rounded-xl shimmer" />
-                  ))}
+              {/* Column types card */}
+              <div style={{
+                background: '#11111a', border: '1px solid #1e1e2e',
+                borderRadius: 14, padding: 16,
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#5c8cfc' }} />
+                  <span style={{ color: '#e8e8f0', fontSize: 14, fontWeight: 500 }}>Column types detected</span>
                 </div>
-              ) : (
-                insights.map((insight: Insight) => (
-                  <InsightCard key={insight.id} insight={insight} />
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+                  {(['numeric', 'categorical', 'date'] as const).map((t) => {
+                    const count = summary.columns.filter((c) => c.type === t).length
+                    return (
+                      <div key={t} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#8888a8' }}>
+                        <span style={{
+                          width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
+                          background: t === 'numeric' ? '#4ade80' : t === 'categorical' ? '#a78bfa' : '#60a5fa',
+                        }} />
+                        <span style={{ textTransform: 'capitalize' }}>{t}</span>
+                        <span style={{ color: '#44445a', marginLeft: 'auto' }}>{count}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* AI Insights */}
+              {isLoadingInsights ? (
+                [1, 2, 3].map((i) => (
+                  <div key={i} style={{ height: 64, borderRadius: 14 }} className="shimmer" />
                 ))
+              ) : (
+                insights.map((ins) => <InsightCard key={ins.id} insight={ins} />)
               )}
             </div>
           </section>
         </div>
 
-        {/* RIGHT CHAT */}
-        <div className="w-[360px] border-l border-bg-border flex flex-col">
-          <div className="p-4 border-b border-bg-border">
-            <p className="text-sm font-medium">Ask Lens</p>
-            <p className="text-xs text-text-muted">Chat with your data</p>
+        {/* Chat sidebar */}
+        <div style={{
+          width: 360, borderLeft: '1px solid #1e1e2e',
+          display: 'flex', flexDirection: 'column', flexShrink: 0,
+        }}>
+          <div style={{ padding: 16, borderBottom: '1px solid #1e1e2e' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{
+                width: 24, height: 24, borderRadius: 8,
+                background: 'linear-gradient(135deg, #7c5cfc, #5c8cfc)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <span style={{ color: 'white', fontSize: 12 }}>✦</span>
+              </div>
+              <div>
+                <p style={{ color: '#e8e8f0', fontWeight: 500, fontSize: 14 }}>Ask Lens</p>
+                <p style={{ color: '#44445a', fontSize: 12 }}>Chat with your data</p>
+              </div>
+            </div>
           </div>
-
           <ChatBox />
         </div>
       </div>

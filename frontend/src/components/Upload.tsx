@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Upload as UploadIcon, FileText } from 'lucide-react'
 import { useCSVParser } from '../hooks/useCSVParser'
@@ -9,56 +9,40 @@ export default function Upload() {
   const [isDragging, setIsDragging] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-
-  const inputRef = useRef<HTMLInputElement>(null)
-
   const { parseFile } = useCSVParser()
   const { setInsights, setIsLoadingInsights } = useAppStore()
   const navigate = useNavigate()
 
   const handleFile = useCallback(
     async (file: File) => {
-      if (isLoading) return
-
       setError(null)
-
-      if (!file.name.toLowerCase().endsWith('.csv')) {
+      if (!file.name.endsWith('.csv')) {
         setError('Please upload a CSV file.')
         return
       }
-
       setIsLoading(true)
-
       try {
         const parsed = await parseFile(file)
-
         navigate('/dashboard')
-
         setIsLoadingInsights(true)
-
-        try {
-          const insights = await fetchInsights(parsed.summary)
-          setInsights(insights)
-        } catch {
-          setInsights([])
-        } finally {
-          setIsLoadingInsights(false)
-        }
+        fetchInsights(parsed.summary)
+          .then((insights) => setInsights(insights))
+          .catch(() => setInsights([]))
+          .finally(() => setIsLoadingInsights(false))
       } catch {
         setError('Failed to parse CSV. Make sure it has headers.')
       } finally {
         setIsLoading(false)
       }
     },
-    [isLoading, parseFile, navigate, setInsights, setIsLoadingInsights]
+    [parseFile, navigate, setInsights, setIsLoadingInsights]
   )
 
   const onDrop = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault()
       setIsDragging(false)
-
-      const file = e.dataTransfer.files?.[0]
+      const file = e.dataTransfer.files[0]
       if (file) handleFile(file)
     },
     [handleFile]
@@ -66,71 +50,74 @@ export default function Upload() {
 
   return (
     <div
-      className={`relative border-2 border-dashed rounded-2xl p-12 transition-all duration-200 cursor-pointer group
-        ${
-          isDragging
-            ? 'border-accent-purple bg-accent-glow scale-[1.01]'
-            : 'border-bg-border bg-bg-surface hover:border-accent-purple/50 hover:bg-bg-elevated'
-        }`}
-      onDragOver={(e) => {
-        e.preventDefault()
-        if (!isDragging) setIsDragging(true)
-      }}
+      onClick={() => !isLoading && document.getElementById('csv-input')?.click()}
+      onDragOver={(e) => { e.preventDefault(); setIsDragging(true) }}
       onDragLeave={() => setIsDragging(false)}
       onDrop={onDrop}
-      onClick={() => {
-        if (!isLoading) inputRef.current?.click()
+      style={{
+        position: 'relative',
+        border: `2px dashed ${isDragging ? '#7c5cfc' : '#1e1e2e'}`,
+        borderRadius: 20,
+        padding: '48px 40px',
+        background: isDragging ? 'rgba(124,92,252,0.07)' : '#11111a',
+        cursor: isLoading ? 'default' : 'pointer',
+        transition: 'all 0.2s',
+        transform: isDragging ? 'scale(1.01)' : 'scale(1)',
+      }}
+      onMouseEnter={(e) => {
+        if (!isDragging) e.currentTarget.style.borderColor = 'rgba(124,92,252,0.5)'
+      }}
+      onMouseLeave={(e) => {
+        if (!isDragging) e.currentTarget.style.borderColor = '#1e1e2e'
       }}
     >
       <input
-        ref={inputRef}
+        id="csv-input"
         type="file"
         accept=".csv"
-        className="hidden"
-        onChange={(e) => {
-          const file = e.target.files?.[0]
-          if (file) handleFile(file)
-        }}
+        style={{ display: 'none' }}
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f) }}
       />
 
-      {isDragging && (
-        <div className="absolute inset-0 rounded-2xl bg-gradient-radial from-accent-glow to-transparent pointer-events-none" />
-      )}
-
-      <div className="flex flex-col items-center gap-4 text-center">
-        <div
-          className={`w-16 h-16 rounded-2xl flex items-center justify-center transition-all duration-200
-          bg-gradient-lens group-hover:scale-110 ${isDragging ? 'scale-110' : ''}`}
-        >
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, textAlign: 'center' }}>
+        {/* Purple gradient icon button — matches original */}
+        <div style={{
+          width: 64, height: 64, borderRadius: 18,
+          background: 'linear-gradient(135deg, #7c5cfc, #5c8cfc)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          transition: 'transform 0.2s, opacity 0.2s',
+          transform: isDragging ? 'scale(1.1)' : 'scale(1)',
+        }}>
           {isLoading ? (
-            <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            <div style={{
+              width: 24, height: 24, borderRadius: '50%',
+              border: '2px solid rgba(255,255,255,0.3)',
+              borderTopColor: 'white',
+              animation: 'spin 0.8s linear infinite',
+            }} />
           ) : (
-            <UploadIcon className="w-7 h-7 text-white" />
+            <UploadIcon style={{ width: 28, height: 28, color: 'white' }} />
           )}
         </div>
 
         <div>
-          <p className="text-text-primary font-display font-semibold text-lg">
-            {isLoading
-              ? 'Parsing...'
-              : isDragging
-              ? 'Release to upload'
-              : 'Drop your CSV'}
+          <p style={{ color: '#e8e8f0', fontFamily: 'Syne, sans-serif', fontWeight: 600, fontSize: 18 }}>
+            {isLoading ? 'Parsing...' : isDragging ? 'Release to upload' : 'Drop your CSV'}
           </p>
-          <p className="text-text-secondary text-sm mt-1">
-            or click to browse
-          </p>
+          <p style={{ color: '#8888a8', fontSize: 14, marginTop: 4 }}>or click to browse</p>
         </div>
 
-        <div className="flex items-center gap-2 text-text-muted text-xs">
-          <FileText className="w-3.5 h-3.5" />
-          <span>CSV files with headers</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#44445a', fontSize: 12 }}>
+          <FileText style={{ width: 13, height: 13 }} />
+          CSV files with headers
         </div>
       </div>
 
       {error && (
-        <p className="mt-4 text-center text-red-400 text-sm">{error}</p>
+        <p style={{ color: '#fc5c5c', fontSize: 13, textAlign: 'center', marginTop: 16 }}>{error}</p>
       )}
+
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   )
 }
