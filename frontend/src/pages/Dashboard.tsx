@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, RefreshCw, SunMedium } from 'lucide-react'
+import { ArrowLeft, RefreshCw} from 'lucide-react'
 import { useAppStore } from '../store/useAppStore'
 import { useChartConfig } from '../hooks/useChartConfig'
 import ChartPanel from '../components/ChartPanel'
@@ -9,7 +9,6 @@ import ChatBox from '../components/ChatBox'
 
 export default function Dashboard() {
   const navigate = useNavigate()
-  const [, setDark] = useState(true)
   const { parsedCSV, insights, isLoadingInsights, setCharts } = useAppStore()
   const charts = useChartConfig(parsedCSV)
 
@@ -18,7 +17,7 @@ export default function Dashboard() {
   if (!parsedCSV) return null
   const { summary } = parsedCSV
 
-  // Only show non-zero type counts in stat strip
+
   const statStrip = [
     { label: 'Rows',        value: summary.rowCount.toLocaleString() },
     { label: 'Columns',     value: summary.columnCount },
@@ -46,7 +45,7 @@ export default function Dashboard() {
             onClick={() => navigate('/')}
             style={{
               padding: 8, borderRadius: 8, border: 'none', background: 'transparent',
-              color: '#8888a8', cursor: 'pointer', display: 'flex', alignItems: 'center',
+              color: '#ffffff', cursor: 'pointer', display: 'flex', alignItems: 'center',
             }}
             onMouseEnter={(e) => { e.currentTarget.style.background = '#181825'; e.currentTarget.style.color = '#e8e8f0' }}
             onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#8888a8' }}
@@ -73,23 +72,12 @@ export default function Dashboard() {
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <button
-            onClick={() => setDark((d) => !d)}
-            style={{
-              padding: 8, borderRadius: 8, border: 'none', background: 'transparent',
-              color: '#8888a8', cursor: 'pointer',
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = '#181825' }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
-          >
-            <SunMedium style={{ width: 16, height: 16 }} />
-          </button>
-          <button
             onClick={() => navigate('/')}
             style={{
               display: 'flex', alignItems: 'center', gap: 6,
               padding: '6px 12px', borderRadius: 8,
-              border: '1px solid #1e1e2e', background: '#181825',
-              color: '#8888a8', fontSize: 13, cursor: 'pointer',
+              border: '1px solid #28283b', background: '#181825',
+              color: '#ffffff', fontSize: 13, cursor: 'pointer',
               fontFamily: 'DM Sans, sans-serif',
             }}
             onMouseEnter={(e) => { e.currentTarget.style.color = '#e8e8f0' }}
