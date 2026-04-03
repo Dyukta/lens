@@ -73,7 +73,7 @@ export default function Home() {
             fontSize: 'clamp(40px, 6vw, 64px)',
             fontWeight: 800,
             lineHeight: 1.15,
-            color: '#9a9abc',
+            color: '#ffffff',
             marginBottom: 16,
           }}>
             See your data
