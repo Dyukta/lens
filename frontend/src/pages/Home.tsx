@@ -7,19 +7,19 @@ const features = [
     icon: BarChart2,
     title: 'Smart Charts',
     desc: 'Auto-generated visualizations',
-    gradient: 'linear-gradient(135deg, #7c5cfc, #5c8cfc)',
+    gradient: 'linear-gradient(135deg, #e45cfc, #5c8cfc)',
   },
   {
     icon: Sparkles,
     title: 'AI Insights',
     desc: 'Patterns detected instantly',
-    gradient: 'linear-gradient(135deg, #5c8cfc, #5cd2fc)',
+    gradient: 'linear-gradient(135deg, #e45cfc, #5cd2fc)',
   },
   {
     icon: MessageSquare,
     title: 'Chat with Data',
     desc: 'Ask questions naturally',
-    gradient: 'linear-gradient(135deg, #fc5ca8, #7c5cfc)',
+    gradient: 'linear-gradient(135deg, #e45cfc, #7c5cfc)',
   },
 ]
 
@@ -27,7 +27,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-bg-base flex flex-col overflow-hidden">
 
-      {/* Ambient glow blobs */}
+    
       <div className="fixed inset-0 pointer-events-none">
         <div style={{
           position: 'absolute', top: '-20%', left: '30%',
@@ -48,12 +48,12 @@ export default function Home() {
         <div className="flex items-center gap-2">
           <div style={{
             width: 28, height: 28, borderRadius: 8,
-            background: 'linear-gradient(135deg, #7c5cfc, #5c8cfc)',
+            background: 'linear-gradient(135deg, #e45cfc, #5c8cfc)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
             <span style={{ color: 'white', fontWeight: 700, fontSize: 13, fontFamily: 'Syne, sans-serif' }}>L</span>
           </div>
-          <span style={{ fontFamily: 'Syne, sans-serif', fontWeight: 600, color: '#e8e8f0', fontSize: 18 }}>
+          <span style={{ fontFamily: 'Syne, sans-serif', fontWeight: 600, color: '#9a9abc', fontSize: 18 }}>
             Lens
           </span>
         </div>
@@ -67,26 +67,13 @@ export default function Home() {
           transition={{ duration: 0.5 }}
           className="text-center max-w-2xl w-full"
         >
-          {/* Badge */}
-          <div style={{
-            display: 'inline-flex', alignItems: 'center', gap: 8,
-            padding: '6px 16px', borderRadius: 999,
-            border: '1px solid rgba(124,92,252,0.35)',
-            background: 'rgba(124,92,252,0.1)',
-            color: '#a08cfc', fontSize: 14, fontWeight: 500,
-            marginBottom: 32,
-          }}>
-            <Sparkles style={{ width: 14, height: 14 }} />
-            AI-Powered Analysis
-          </div>
 
-          {/* Heading */}
           <h1 style={{
             fontFamily: 'Syne, sans-serif',
             fontSize: 'clamp(40px, 6vw, 64px)',
             fontWeight: 800,
             lineHeight: 1.15,
-            color: '#e8e8f0',
+            color: '#9a9abc',
             marginBottom: 16,
           }}>
             See your data
@@ -94,8 +81,8 @@ export default function Home() {
             <span className="gradient-text">through Lens</span>
           </h1>
 
-          <p style={{ color: '#8888a8', fontSize: 18, lineHeight: 1.6, marginBottom: 48 }}>
-            Drop a CSV and get instant charts, insights, and a chatbot
+          <p style={{ color: '#9a9abc', fontSize: 18, lineHeight: 1.6, marginBottom: 48 }}>
+            Drop a CSV and get instant charts, insights and a chatbot
             <br /> to explore your data.
           </p>
 
@@ -151,7 +138,7 @@ export default function Home() {
               </div>
               <div>
                 <p style={{ color: '#e8e8f0', fontWeight: 500, fontSize: 14 }}>{title}</p>
-                <p style={{ color: '#44445a', fontSize: 12, marginTop: 2 }}>{desc}</p>
+                <p style={{ color: '#9a9abc', fontSize: 12, marginTop: 2 }}>{desc}</p>
               </div>
             </div>
           ))}
