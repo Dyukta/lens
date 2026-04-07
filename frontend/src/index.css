@@ -4,6 +4,15 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer utilities {
+  .bg-surface {
+    background-color: var(--color-surface);
+  }
+  .text-primary {
+    color: var(--color-primary);
+  }
+}
+
 /* ─── Base ─────────────────────────────────────── */
 @layer base {
   *, *::before, *::after { box-sizing: border-box; }
