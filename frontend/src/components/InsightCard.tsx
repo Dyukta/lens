@@ -1,76 +1,109 @@
 import type { Insight } from '../types'
-import {
-  TrendingUp,
-  AlertTriangle,
-  GitMerge,
-  PieChart,
-  FileText,
-} from 'lucide-react'
+import { TrendingUp, AlertTriangle, GitMerge, PieChart, FileText } from 'lucide-react'
 
-const ICONS = {
-  trend: TrendingUp,
-  anomaly: AlertTriangle,
-  correlation: GitMerge,
-  distribution: PieChart,
-  summary: FileText,
-} as const
-
-const COLORS = {
+const CONFIG = {
   trend: {
-    border: 'rgba(92,252,168,0.25)',
+    icon: TrendingUp,
+    border: 'rgba(92,252,168,0.2)',
     dot: '#5cfca8',
-    bg: 'rgba(92,252,168,0.08)',
+    bg: 'rgba(92,252,168,0.06)',
+    label: 'TREND',
+    labelColor: '#5cfca8',
   },
   anomaly: {
-    border: 'rgba(252,92,92,0.25)',
+    icon: AlertTriangle,
+    border: 'rgba(252,92,92,0.2)',
     dot: '#fc5c5c',
-    bg: 'rgba(252,92,92,0.08)',
+    bg: 'rgba(252,92,92,0.06)',
+    label: 'ANOMALY',
+    labelColor: '#fc5c5c',
   },
   correlation: {
-    border: 'rgba(92,140,252,0.25)',
+    icon: GitMerge,
+    border: 'rgba(92,140,252,0.2)',
     dot: '#5c8cfc',
-    bg: 'rgba(92,140,252,0.08)',
+    bg: 'rgba(92,140,252,0.06)',
+    label: 'CORRELATION',
+    labelColor: '#5c8cfc',
   },
   distribution: {
-    border: 'rgba(124,92,252,0.25)',
+    icon: PieChart,
+    border: 'rgba(124,92,252,0.2)',
     dot: '#7c5cfc',
-    bg: 'rgba(124,92,252,0.08)',
+    bg: 'rgba(124,92,252,0.06)',
+    label: 'DISTRIBUTION',
+    labelColor: '#7c5cfc',
   },
   summary: {
-    border: 'rgba(252,192,92,0.25)',
+    icon: FileText,
+    border: 'rgba(252,192,92,0.2)',
     dot: '#fcc05c',
-    bg: 'rgba(252,192,92,0.08)',
+    bg: 'rgba(252,192,92,0.06)',
+    label: 'SUMMARY',
+    labelColor: '#fcc05c',
   },
 } as const
 
 export default function InsightCard({ insight }: { insight: Insight }) {
-  const Icon = ICONS[insight.type] ?? FileText
-  const color = COLORS[insight.type] ?? COLORS.summary
+  const cfg = CONFIG[insight.type] ?? CONFIG.summary
+  const Icon = cfg.icon
 
   return (
-    <div
-      className="rounded-xl p-4 border transition-colors animate-slide-up"
-      style={{
-        borderColor: color.border,
-        backgroundColor: color.bg,
-      }}
-    >
-      <div className="flex items-start gap-3">
-        <div
-          className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
-          style={{ backgroundColor: `${color.dot}20` }}
-        >
-          <Icon className="w-3.5 h-3.5" style={{ color: color.dot }} />
-        </div>
+    <div style={{
+      border: `1px solid ${cfg.border}`,
+      background: cfg.bg,
+      borderRadius: 14,
+      padding: '14px 16px',
+      display: 'flex',
+      gap: 12,
+      alignItems: 'flex-start',
+      transition: 'border-color 0.2s',
+    }}>
+      <div style={{
+        width: 32,
+        height: 32,
+        borderRadius: 10,
+        background: `${cfg.dot}18`,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0,
+        marginTop: 1,
+      }}>
+        <Icon style={{ width: 15, height: 15, color: cfg.dot }} />
+      </div>
 
-        <div>
-          <p className="text-text-primary text-sm font-medium">
-            {insight.title}
-          </p>
-          <p className="text-text-secondary text-xs mt-1 leading-relaxed">
-            {insight.description}
-          </p>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+          <span style={{
+            fontSize: 9,
+            fontWeight: 700,
+            letterSpacing: '0.08em',
+            color: cfg.labelColor,
+            fontFamily: 'JetBrains Mono, monospace',
+            background: `${cfg.dot}15`,
+            padding: '2px 6px',
+            borderRadius: 4,
+          }}>
+            {cfg.label}
+          </span>
         </div>
+        <p style={{
+          color: '#e8e8f0',
+          fontSize: 13,
+          fontWeight: 600,
+          lineHeight: 1.4,
+          marginBottom: 4,
+        }}>
+          {insight.title}
+        </p>
+        <p style={{
+          color: '#6666888',
+          fontSize: 12,
+          lineHeight: 1.6,
+        }}>
+          {insight.description}
+        </p>
       </div>
     </div>
   )
