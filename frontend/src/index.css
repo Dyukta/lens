@@ -2,47 +2,66 @@
 @tailwind components;
 @tailwind utilities;
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+body {
+  @apply bg-[#0a0a0f] text-white;
 }
 
-html, body, #root {
-  height: 100%;
-  background-color: #0a0a0f;
-  color: #e8e8f0;
-  font-family: 'DM Sans', sans-serif;
+.page-center {
+  @apply flex items-center justify-center min-h-screen;
 }
 
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: #11111a; }
-::-webkit-scrollbar-thumb { background: #2a2a3e; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #7c5cfc; }
-
-.lens-glow {
-  box-shadow: 0 0 40px rgba(124, 92, 252, 0.12);
+.hero {
+  @apply text-center max-w-xl;
 }
 
-.gradient-text {
-  background: linear-gradient(135deg, #e45cfc, #5c8cfc);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+.hero-title {
+  @apply text-4xl font-bold mb-4;
 }
 
-.chart-container {
-  position: relative;
-  height: 280px;
+.hero-sub {
+  @apply text-gray-400 mb-6;
 }
 
-.shimmer {
-  background: linear-gradient(90deg, #181825 0%, #1e1e2e 50%, #181825 100%);
-  background-size: 200% 100%;
-  animation: shimmer 1.8s linear infinite;
+.upload-box {
+  @apply border border-gray-700 p-6 rounded-lg cursor-pointer;
 }
 
-@keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+.dashboard-layout {
+  @apply flex flex-col min-h-screen;
+}
+
+.dashboard-body {
+  @apply flex flex-1;
+}
+
+.dashboard-main {
+  @apply flex-1 p-4 space-y-6;
+}
+
+.chat-desktop {
+  @apply hidden md:block w-[320px] border-l border-gray-800;
+}
+
+.chat-mobile {
+  @apply fixed bottom-0 right-0 w-full h-[60%] bg-black;
+}
+
+.chat-fab {
+  @apply fixed bottom-4 right-4 bg-purple-600 w-12 h-12 rounded-full;
+}
+
+.card {
+  @apply bg-[#11111a] border border-gray-800 p-4 rounded-lg;
+}
+
+.grid-2 {
+  @apply grid grid-cols-1 md:grid-cols-2 gap-4;
+}
+
+.stack {
+  @apply flex flex-col gap-3;
+}
+
+.empty {
+  @apply text-gray-500 text-sm;
 }

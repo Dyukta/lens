@@ -1,10 +1,10 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import Home from './pages/Home'
 import Dashboard from './pages/Dashboard'
-import  { useAppStore } from './store/useAppStore'
+import { useAppStore } from './store/useAppStore'
 
 export default function App() {
-  const parsedCSV = useAppStore((state) => state.parsedCSV)
+  const parsedCSV = useAppStore((s) => s.parsedCSV)
 
   return (
     <Routes>
