@@ -1,6 +1,12 @@
 import { useMemo } from 'react'
 import type { ParsedCSV, ChartConfig } from '../types'
-import { CHART_COLORS_ARRAY, CHART_BORDER_ARRAY, MAX_CATEGORIES_PIE, MAX_BARS, MAX_SCATTER_POINTS } from '../constants/charts'
+import {
+  CHART_COLORS_ARRAY,
+  CHART_BORDER_ARRAY,
+  MAX_CATEGORIES_PIE,
+  MAX_BARS,
+  MAX_SCATTER_POINTS
+} from '../constants/charts'
 
 function frequencyMap(values: string[]): Record<string, number> {
   const freq: Record<string, number> = {}
@@ -43,6 +49,7 @@ export function useChartConfig(csv: ParsedCSV | null): ChartConfig[] {
     const catCols = cols.filter((c) => c.type === 'categorical')
     const dateCols = cols.filter((c) => c.type === 'date')
 
+    // Bar chart (numeric vs categorical)
     if (catCols.length && numericCols.length) {
       const cat = catCols[0]
       const num = numericCols[0]
@@ -83,6 +90,7 @@ export function useChartConfig(csv: ParsedCSV | null): ChartConfig[] {
       }
     }
 
+    // Pie/Doughnut chart (categorical distribution)
     if (catCols.length) {
       const bestCat =
         catCols.find((c) => {
@@ -113,6 +121,7 @@ export function useChartConfig(csv: ParsedCSV | null): ChartConfig[] {
       }
     }
 
+    // Line chart (numeric over date)
     if (dateCols.length && numericCols.length) {
       const dateCol = dateCols[0]
       const numCol =
@@ -121,7 +130,6 @@ export function useChartConfig(csv: ParsedCSV | null): ChartConfig[] {
         ) ?? numericCols[0]
 
       const buckets: Record<string, { sum: number; count: number }> = {}
-
       for (const row of rows) {
         const key = row[dateCol.name]
         const raw = row[numCol.name]
@@ -162,38 +170,40 @@ export function useChartConfig(csv: ParsedCSV | null): ChartConfig[] {
       }
     }
 
-    if (numericCols.length >= 2) {
-      const xCol = numericCols[0]
-      const yCol = numericCols[1]
-      const points = []
+ // Scatter chart (numeric vs numeric)
+if (numericCols.length >= 2) {
+  const xCol = numericCols[0]
+  const yCol = numericCols[1]
+  const points: { x: number; y: number }[] = []
 
-      for (let i = 0; i < rows.length && points.length < MAX_SCATTER_POINTS; i++) {
-        const r = rows[i]
-        const x = parseFloat(r[xCol.name])
-        const y = parseFloat(r[yCol.name])
-        if (!isNaN(x) && !isNaN(y)) points.push({ x, y })
-      }
+  for (let i = 0; i < rows.length && points.length < MAX_SCATTER_POINTS; i++) {
+    const r = rows[i]
+    const x = parseFloat(r[xCol.name])
+    const y = parseFloat(r[yCol.name])
+    if (!isNaN(x) && !isNaN(y)) points.push({ x, y })
+  }
 
-      if (points.length >= 5) {
-        charts.push({
-          type: 'scatter',
-          title: `${xCol.name} vs ${yCol.name}`,
-          labels: [],
-          datasets: [
-            {
-              label: `${xCol.name} vs ${yCol.name}`,
-              data: points as unknown as number[],
-              backgroundColor: CHART_COLORS_ARRAY[3],
-              borderColor: CHART_BORDER_ARRAY[3],
-              borderWidth: 1,
-            },
-          ],
-          xLabel: xCol.name,
-          yLabel: yCol.name,
-        })
-      }
-    }
+  if (points.length >= 5) {
+    charts.push({
+      type: 'scatter',
+      title: `${xCol.name} vs ${yCol.name}`,
+      labels: [], // scatter charts don't use labels
+      datasets: [
+        {
+          label: `${xCol.name} vs ${yCol.name}`,
+          data: points, // now valid type
+          backgroundColor: CHART_COLORS_ARRAY[3],
+          borderColor: CHART_BORDER_ARRAY[3],
+          borderWidth: 1,
+        },
+      ],
+      xLabel: xCol.name,
+      yLabel: yCol.name,
+    })
+  }
+}
 
+    // Numeric summary bar chart
     if (numericCols.length >= 2) {
       charts.push({
         type: 'bar',

@@ -54,7 +54,7 @@ export interface ChatMessage {
 
 export interface ChartDataset {
   label: string
-  data: number[]
+  data: number[] | { x: number; y: number }[] // allow scatter data
   backgroundColor?: string | string[]
   borderColor?: string | string[]
   borderWidth?: number
