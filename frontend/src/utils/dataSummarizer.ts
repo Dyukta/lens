@@ -1,10 +1,6 @@
 import type { ColumnStats, ColumnType, DataSummary, Insight } from '../types'
 
-export function summarizeColumn(
-  name: string,
-  type: ColumnType,
-  values: string[]
-): ColumnStats {
+export function summarizeColumn(name: string, type: ColumnType, values: string[]): ColumnStats {
   let nullCount = 0
   const nonEmpty: string[] = []
 
@@ -22,9 +18,7 @@ export function summarizeColumn(
       if (!isNaN(n)) nums.push(n)
     }
 
-    if (nums.length === 0) {
-      return { name, type, uniqueCount, nullCount }
-    }
+    if (nums.length === 0) return { name, type, uniqueCount, nullCount }
 
     let sum = 0
     let min = nums[0]
@@ -36,38 +30,19 @@ export function summarizeColumn(
       if (n > max) max = n
     }
 
-    const mean = parseFloat((sum / nums.length).toFixed(4))
-
-    return {
-      name,
-      type,
-      min,
-      max,
-      mean,
-      uniqueCount,
-      nullCount,
-    }
+    return { name, type, min, max, mean: parseFloat((sum / nums.length).toFixed(4)), uniqueCount, nullCount }
   }
 
   if (type === 'categorical') {
     const freq: Record<string, number> = {}
-
-    for (const v of nonEmpty) {
-      freq[v] = (freq[v] || 0) + 1
-    }
+    for (const v of nonEmpty) freq[v] = (freq[v] || 0) + 1
 
     const topValues = Object.entries(freq)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5)
       .map(([k]) => k)
 
-    return {
-      name,
-      type,
-      uniqueCount,
-      topValues,
-      nullCount,
-    }
+    return { name, type, uniqueCount, topValues, nullCount }
   }
 
   return { name, type, uniqueCount, nullCount }
@@ -84,12 +59,7 @@ export function buildDataSummary(
     return summarizeColumn(header, columnTypes[header] ?? 'unknown', values)
   })
 
-  return {
-    fileName,
-    rowCount: rows.length,
-    columnCount: headers.length,
-    columns,
-  }
+  return { fileName, rowCount: rows.length, columnCount: headers.length, columns }
 }
 
 export function formatNumber(n: number): string {
@@ -111,9 +81,7 @@ function pearsonCorrelation(xs: number[], ys: number[]): number {
   const meanX = xs.reduce((a, b) => a + b, 0) / n
   const meanY = ys.reduce((a, b) => a + b, 0) / n
 
-  let num = 0
-  let denomX = 0
-  let denomY = 0
+  let num = 0, denomX = 0, denomY = 0
 
   for (let i = 0; i < n; i++) {
     const dx = xs[i] - meanX
@@ -127,29 +95,25 @@ function pearsonCorrelation(xs: number[], ys: number[]): number {
   return denom === 0 ? 0 : num / denom
 }
 
-export function generateLocalInsights(
-  csv: { rows: Record<string, string>[]; summary: DataSummary }
-): Insight[] {
+export function generateLocalInsights(csv: {
+  rows: Record<string, string>[]
+  summary: DataSummary
+}): Insight[] {
   const { rows, summary } = csv
   const insights: Insight[] = []
-
   let idCounter = 0
   const id = () => `local-${idCounter++}`
 
   const numericCols = summary.columns.filter(
     (c) => c.type === 'numeric' && !isIdentifierColumn(c.name)
   )
-
   const catCols = summary.columns.filter((c) => c.type === 'categorical')
   const dateCols = summary.columns.filter((c) => c.type === 'date')
-  const allCols = summary.columns
 
-  // 1. Missing data
-  const colsWithNulls = allCols.filter((c) => c.nullCount > 0)
+  const colsWithNulls = summary.columns.filter((c) => c.nullCount > 0)
   if (colsWithNulls.length) {
-    const worst = colsWithNulls.sort((a, b) => b.nullCount - a.nullCount)[0]
+    const worst = [...colsWithNulls].sort((a, b) => b.nullCount - a.nullCount)[0]
     const pct = ((worst.nullCount / summary.rowCount) * 100).toFixed(0)
-
     insights.push({
       id: id(),
       type: 'anomaly',
@@ -158,60 +122,44 @@ export function generateLocalInsights(
     })
   }
 
-  // 2. Category vs numeric
   if (catCols.length && numericCols.length) {
     const cat = catCols[0]
-
     const num =
-      numericCols.find((c) =>
-        /total|revenue|amount|sales|price|value|spend/i.test(c.name)
-      ) ?? numericCols[0]
+      numericCols.find((c) => /total|revenue|amount|sales|price|value|spend/i.test(c.name)) ??
+      numericCols[0]
 
-    const buckets: Record<string, number[]> = {}
-
+    const buckets: Record<string, { sum: number; count: number }> = {}
     for (const row of rows) {
       const key = row[cat.name] || 'Unknown'
-      const val = parseFloat(
-        (row[num.name] ?? '').replace(/[$,%]/g, '').trim()
-      )
-
+      const val = parseFloat((row[num.name] ?? '').replace(/[$,%]/g, '').trim())
       if (isNaN(val)) continue
-      if (!buckets[key]) buckets[key] = []
-      buckets[key].push(val)
+      if (!buckets[key]) buckets[key] = { sum: 0, count: 0 }
+      buckets[key].sum += val
+      buckets[key].count++
     }
 
     const avgs = Object.entries(buckets)
-      .map(([k, vals]) => {
-        const total = vals.reduce((a, b) => a + b, 0)
-        return { key: k, avg: total / vals.length, total, count: vals.length }
-      })
+      .map(([k, v]) => ({ key: k, avg: v.sum / v.count, total: v.sum, count: v.count }))
       .sort((a, b) => b.avg - a.avg)
 
     if (avgs.length >= 2) {
       const top = avgs[0]
       const bottom = avgs[avgs.length - 1]
-
       const diff =
-        bottom.avg !== 0
-          ? (((top.avg - bottom.avg) / bottom.avg) * 100).toFixed(0)
-          : '0'
+        bottom.avg !== 0 ? (((top.avg - bottom.avg) / bottom.avg) * 100).toFixed(0) : '0'
 
       insights.push({
         id: id(),
         type: 'trend',
         title: `${top.key} leads ${cat.name}`,
-        description: `${formatNumber(top.avg)} vs ${formatNumber(
-          bottom.avg
-        )} (${diff}% difference)`,
+        description: `${formatNumber(top.avg)} vs ${formatNumber(bottom.avg)} (${diff}% difference)`,
       })
     }
 
     if (/total|revenue|amount|sales|price|value|spend/i.test(num.name)) {
       const grandTotal = avgs.reduce((a, b) => a + b.total, 0)
-
       if (grandTotal > 0) {
         const topShare = ((avgs[0].total / grandTotal) * 100).toFixed(0)
-
         insights.push({
           id: id(),
           type: 'summary',
@@ -222,59 +170,42 @@ export function generateLocalInsights(
     }
   }
 
-  // 3. Correlation
   if (numericCols.length >= 2) {
     for (let i = 0; i < numericCols.length - 1; i++) {
       for (let j = i + 1; j < numericCols.length; j++) {
         const colA = numericCols[i]
         const colB = numericCols[j]
-
         const pairs: [number, number][] = []
 
         for (const row of rows) {
-          const a = parseFloat(
-            (row[colA.name] ?? '').replace(/[$,%]/g, '').trim()
-          )
-          const b = parseFloat(
-            (row[colB.name] ?? '').replace(/[$,%]/g, '').trim()
-          )
-
+          const a = parseFloat((row[colA.name] ?? '').replace(/[$,%]/g, '').trim())
+          const b = parseFloat((row[colB.name] ?? '').replace(/[$,%]/g, '').trim())
           if (!isNaN(a) && !isNaN(b)) pairs.push([a, b])
         }
 
         if (pairs.length < 5) continue
 
-        const r = pearsonCorrelation(
-          pairs.map(([a]) => a),
-          pairs.map(([, b]) => b)
-        )
-
+        const r = pearsonCorrelation(pairs.map(([a]) => a), pairs.map(([, b]) => b))
         if (Math.abs(r) >= 0.6) {
           insights.push({
             id: id(),
             type: 'correlation',
             title: `${colA.name} vs ${colB.name}`,
-            description: `r = ${r.toFixed(2)}`,
+            description: `r = ${r.toFixed(2)} — ${Math.abs(r) >= 0.8 ? 'strong' : 'moderate'} ${r > 0 ? 'positive' : 'negative'} correlation`,
           })
         }
       }
     }
   }
 
-  // 4. Date range
   if (dateCols.length) {
     const col = dateCols[0]
-
-    const dates = rows
-      .map((r) => r[col.name])
-      .filter(Boolean)
-      .sort()
-
+    const dates = rows.map((r) => r[col.name]).filter(Boolean).sort()
     if (dates.length >= 2) {
       insights.push({
         id: id(),
         type: 'summary',
-        title: `Date range`,
+        title: 'Date range',
         description: `${dates[0]} → ${dates[dates.length - 1]}`,
       })
     }

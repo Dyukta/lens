@@ -1,72 +1,121 @@
-import { useState } from "react";
-import { useAppStore } from "../../store/useAppStore";
-import { sendChatMessage } from "../../services/api";
+import { useState, useRef, useEffect } from 'react'
+import { useAppStore } from '../../store/useAppStore'
+import { sendChatMessage } from '../../services/api'
 
-export type ChatMessage = {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-  timestamp: number;
-  isStreaming?: boolean;
-};
+const SUGGESTED = [
+  "What's the average?",
+  'Any outliers?',
+  'Show key trends',
+  'Summarize the data',
+]
 
-const ChatBox: React.FC = () => {
-  const [input, setInput] = useState("");
-  const { parsedCSV, messages, addMessage, updateLastMessage } = useAppStore();
+export default function ChatBox() {
+  const [input, setInput] = useState('')
+  const bottomRef = useRef<HTMLDivElement>(null)
+  const { parsedCSV, messages, isChatLoading, addMessage, updateMessage, setIsChatLoading } = useAppStore()
 
-  const send = async () => {
-    if (!input.trim() || !parsedCSV) return;
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
 
-    const text = input.trim();
-    setInput("");
+  const send = async (text: string) => {
+    const trimmed = text.trim()
+    if (!trimmed || !parsedCSV || isChatLoading) return
 
-    // Add user message
-    addMessage({
-      id: Date.now().toString(),
-      role: "user",
-      content: text,
-      timestamp: Date.now(),
-    });
+    setInput('')
+    setIsChatLoading(true)
 
-    // Add temporary assistant message
-    addMessage({
-      id: "tmp",
-      role: "assistant",
-      content: "",
-      timestamp: Date.now(),
-      isStreaming: true,
-    });
+    const userMsg = { id: Date.now().toString(), role: 'user' as const, content: trimmed, timestamp: Date.now() }
+    addMessage(userMsg)
+
+    const assistantId = `assistant-${Date.now()}`
+    addMessage({ id: assistantId, role: 'assistant', content: '', timestamp: Date.now(), isStreaming: true })
 
     try {
-      const res = await sendChatMessage(text, parsedCSV.summary, messages);
-      updateLastMessage(res, true);
+      const answer = await sendChatMessage(trimmed, parsedCSV.summary, messages)
+      updateMessage(assistantId, answer, true)
     } catch {
-      updateLastMessage("Error", true);
+      updateMessage(assistantId, 'Something went wrong. Please try again.', true)
+    } finally {
+      setIsChatLoading(false)
     }
-  };
+  }
+
+  const isEmpty = messages.length === 0
 
   return (
-    <div className="chat">
-      <div className="chat-body">
-        {messages.map((m) => (
-          <div key={m.id} className={`msg ${m.role}`}>
-            {m.content}
-          </div>
-        ))}
+    <div className="flex flex-col h-full">
+      <div className="flex items-center gap-2.5 px-4 py-3 border-b shrink-0"
+        style={{ borderColor: 'var(--color-border)' }}>
+        <div className="w-7 h-7 rounded-full flex items-center justify-center text-sm"
+          style={{ background: 'var(--color-accent)' }}>
+          ✦
+        </div>
+        <div>
+          <p className="text-sm font-semibold leading-none">Ask Lens</p>
+          <p className="text-xs mt-0.5" style={{ color: 'var(--color-muted)' }}>Chat with your data</p>
+        </div>
       </div>
 
-      <div className="chat-input">
-        <input
-          type="text"
-          placeholder="Type your message..."
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && send()}
-        />
-        <button onClick={send}>Send</button>
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+        {isEmpty ? (
+          <div className="flex flex-col items-center gap-4 pt-6">
+            <p className="text-xs text-center" style={{ color: 'var(--color-muted)' }}>
+              Ask anything about your data
+            </p>
+            <div className="flex flex-wrap gap-2 justify-center">
+              {SUGGESTED.map((s) => (
+                <button key={s} className="btn-outline text-xs px-3 py-1.5" onClick={() => send(s)}>
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
+          messages.map((m) => (
+            <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+              {m.isStreaming ? (
+                <div className="msg-assistant">
+                  <span className="typing-dot" />
+                  <span className="typing-dot" />
+                  <span className="typing-dot" />
+                </div>
+              ) : (
+                <div className={m.role === 'user' ? 'msg-user' : 'msg-assistant'}>
+                  {m.content}
+                </div>
+              )}
+            </div>
+          ))
+        )}
+        <div ref={bottomRef} />
+      </div>
+
+      <div className="px-4 py-3 border-t shrink-0" style={{ borderColor: 'var(--color-border)' }}>
+        <div className="flex items-center gap-2 rounded-xl px-3 py-2"
+          style={{ background: 'var(--color-border)', border: '1px solid var(--color-border-hi)' }}>
+          <input
+            className="flex-1 bg-transparent text-sm outline-none placeholder:text-[var(--color-muted)]"
+            placeholder="Ask about your data…"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && send(input)}
+            disabled={isChatLoading}
+          />
+          <button
+            className="text-xs shrink-0 disabled:opacity-40"
+            style={{ color: 'var(--color-accent)' }}
+            onClick={() => send(input)}
+            disabled={!input.trim() || isChatLoading}
+            aria-label="Send"
+          >
+            ↑
+          </button>
+        </div>
+        <p className="text-xs mt-1.5 text-center" style={{ color: 'var(--color-muted)' }}>
+          Enter to send · Shift+Enter for newline
+        </p>
       </div>
     </div>
-  );
-};
-
-export default ChatBox;
+  )
+}

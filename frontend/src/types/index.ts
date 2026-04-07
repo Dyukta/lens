@@ -1,11 +1,5 @@
 export type ColumnType = 'numeric' | 'categorical' | 'date' | 'unknown'
 
-export interface Column {
-  name: string
-  type: ColumnType
-  sample: Array<string | number>
-}
-
 export interface ColumnStats {
   name: string
   type: ColumnType
@@ -30,12 +24,7 @@ export interface ParsedCSV {
   summary: DataSummary
 }
 
-export type InsightType =
-  | 'trend'
-  | 'anomaly'
-  | 'correlation'
-  | 'distribution'
-  | 'summary'
+export type InsightType = 'trend' | 'anomaly' | 'correlation' | 'distribution' | 'summary'
 
 export interface Insight {
   id: string
@@ -54,7 +43,7 @@ export interface ChatMessage {
 
 export interface ChartDataset {
   label: string
-  data: number[] | { x: number; y: number }[] // allow scatter data
+  data: number[] | { x: number; y: number }[]
   backgroundColor?: string | string[]
   borderColor?: string | string[]
   borderWidth?: number

@@ -17,7 +17,7 @@ export function useCSVParser() {
         skipEmptyLines: true,
         dynamicTyping: false,
 
-        complete: (result: Papa.ParseResult<Record<string, string>>) => {
+        complete: (result) => {
           try {
             const headers = result.meta.fields ?? []
             const rows = result.data as Record<string, string>[]
@@ -28,25 +28,19 @@ export function useCSVParser() {
             }
 
             const columnTypes = sniffAllColumns(headers, rows)
-            const summary = buildDataSummary(
-              file.name,
-              headers,
-              rows,
-              columnTypes
-            )
-
+            const summary = buildDataSummary(file.name, headers, rows, columnTypes)
             const parsed: ParsedCSV = { headers, rows, summary }
 
             setParsedCSV(parsed)
             setIsParsingCSV(false)
             resolve(parsed)
-          } catch (err: unknown) {
+          } catch (err) {
             setIsParsingCSV(false)
             reject(err instanceof Error ? err : new Error('Parsing failed'))
           }
         },
 
-        error: (err: unknown) => {
+        error: (err) => {
           setIsParsingCSV(false)
           reject(err instanceof Error ? err : new Error('Parsing error'))
         },

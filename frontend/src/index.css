@@ -1,67 +1,179 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-body {
-  @apply bg-[#0a0a0f] text-white;
+/* ─── Base ─────────────────────────────────────── */
+@layer base {
+  *, *::before, *::after { box-sizing: border-box; }
+
+  body {
+    @apply bg-surface text-primary font-sans antialiased;
+    background-color: #0a0a0f;
+    color: #e8e8f0;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { @apply rounded-full; background: #2a2a3d; }
 }
 
-.page-center {
-  @apply flex items-center justify-center min-h-screen;
+/* ─── Design tokens ─────────────────────────────── */
+:root {
+  --color-bg:        #0a0a0f;
+  --color-surface:   #11111a;
+  --color-border:    #1e1e2e;
+  --color-border-hi: #2a2a3d;
+  --color-primary:   #e8e8f0;
+  --color-muted:     #8888a8;
+  --color-accent:    #7c5cfc;
+  --color-accent-lo: rgba(124, 92, 252, 0.12);
 }
 
-.hero {
-  @apply text-center max-w-xl;
+/* ─── Components ────────────────────────────────── */
+@layer components {
+
+  /* Card */
+  .card {
+    @apply rounded-xl border p-4;
+    background: var(--color-surface);
+    border-color: var(--color-border);
+  }
+
+  .card-title {
+    @apply text-xs font-semibold tracking-widest uppercase mb-3;
+    color: var(--color-muted);
+  }
+
+  /* Chart wrapper */
+  .chart-container {
+    position: relative;
+    height: 260px;
+    width: 100%;
+  }
+
+  /* Button variants */
+  .btn {
+    @apply inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors;
+  }
+
+  .btn-ghost {
+    @apply btn;
+    color: var(--color-muted);
+    background: transparent;
+  }
+  .btn-ghost:hover { background: var(--color-border); color: var(--color-primary); }
+
+  .btn-accent {
+    @apply btn text-white;
+    background: var(--color-accent);
+  }
+  .btn-accent:hover { background: #6a4de0; }
+
+  .btn-outline {
+    @apply btn;
+    border: 1px solid var(--color-border-hi);
+    color: var(--color-muted);
+    background: transparent;
+  }
+  .btn-outline:hover { border-color: var(--color-accent); color: var(--color-primary); }
+
+  /* Pill / badge */
+  .badge {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium;
+  }
+
+  /* Insight type colours */
+  .insight-trend       { --insight-color: #5cf08a; }
+  .insight-anomaly     { --insight-color: #fc5c5c; }
+  .insight-correlation { --insight-color: #5c8cfc; }
+  .insight-distribution{ --insight-color: #fcc05c; }
+  .insight-summary     { --insight-color: #7c5cfc; }
+
+  /* Summary stat card */
+  .stat-card {
+    @apply card flex flex-col gap-1;
+    min-width: 0;
+  }
+
+  .stat-label {
+    @apply text-xs uppercase tracking-widest;
+    color: var(--color-muted);
+  }
+
+  .stat-value {
+    @apply text-2xl font-bold;
+    color: var(--color-primary);
+  }
+
+  /* Chat message bubble */
+  .msg-bubble {
+    @apply rounded-xl px-3 py-2 text-sm max-w-[85%] whitespace-pre-wrap break-words;
+  }
+
+  .msg-user {
+    @apply msg-bubble ml-auto text-white;
+    background: var(--color-accent);
+  }
+
+  .msg-assistant {
+    @apply msg-bubble;
+    background: var(--color-border);
+    color: var(--color-primary);
+  }
+
+  /* Streaming dot */
+  .typing-dot {
+    @apply inline-block w-1.5 h-1.5 rounded-full mx-0.5;
+    background: var(--color-muted);
+    animation: typing-bounce 1.2s infinite ease-in-out;
+  }
+  .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+  /* Upload drop zone */
+  .drop-zone {
+    @apply rounded-2xl border-2 border-dashed p-10 text-center cursor-pointer transition-colors;
+    border-color: var(--color-border-hi);
+    background: var(--color-surface);
+  }
+  .drop-zone:hover,
+  .drop-zone.drag-over {
+    border-color: var(--color-accent);
+    background: var(--color-accent-lo);
+  }
+
+  /* Feature card (home page) */
+  .feature-card {
+    @apply card flex flex-col items-center gap-2 p-5 text-center;
+  }
+
+  .feature-icon {
+    @apply w-11 h-11 rounded-xl flex items-center justify-center text-xl;
+    background: var(--color-accent-lo);
+    color: var(--color-accent);
+  }
 }
 
-.hero-title {
-  @apply text-4xl font-bold mb-4;
+/* ─── Animations ────────────────────────────────── */
+@keyframes typing-bounce {
+  0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+  40%           { transform: translateY(-4px); opacity: 1; }
 }
 
-.hero-sub {
-  @apply text-gray-400 mb-6;
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-.upload-box {
-  @apply border border-gray-700 p-6 rounded-lg cursor-pointer;
-}
+.animate-fade-in { animation: fade-in 0.2s ease-out both; }
 
-.dashboard-layout {
-  @apply flex flex-col min-h-screen;
-}
-
-.dashboard-body {
-  @apply flex flex-1;
-}
-
-.dashboard-main {
-  @apply flex-1 p-4 space-y-6;
-}
-
-.chat-desktop {
-  @apply hidden md:block w-[320px] border-l border-gray-800;
-}
-
-.chat-mobile {
-  @apply fixed bottom-0 right-0 w-full h-[60%] bg-black;
-}
-
-.chat-fab {
-  @apply fixed bottom-4 right-4 bg-purple-600 w-12 h-12 rounded-full;
-}
-
-.card {
-  @apply bg-[#11111a] border border-gray-800 p-4 rounded-lg;
-}
-
-.grid-2 {
-  @apply grid grid-cols-1 md:grid-cols-2 gap-4;
-}
-
-.stack {
-  @apply flex flex-col gap-3;
-}
-
-.empty {
-  @apply text-gray-500 text-sm;
+/* ─── Gradient text (hero) ──────────────────────── */
+.gradient-text {
+  background: linear-gradient(135deg, #7c5cfc 0%, #fc5caa 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }

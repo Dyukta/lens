@@ -3,10 +3,8 @@ import type { DataSummary, Insight, ChatMessage } from '../types'
 
 const api = axios.create({
   baseURL: '/api',
-  timeout: 60000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  timeout: 60_000,
+  headers: { 'Content-Type': 'application/json' },
 })
 
 export async function fetchInsights(summary: DataSummary): Promise<Insight[]> {
@@ -19,16 +17,10 @@ export async function sendChatMessage(
   summary: DataSummary,
   history: ChatMessage[]
 ): Promise<string> {
-  const trimmed = question.trim()
-
   const res = await api.post<{ answer: string }>('/chat', {
-    question: trimmed,
+    question: question.trim(),
     summary,
-    history: history.slice(-6).map((m) => ({
-      role: m.role,
-      content: m.content,
-    })),
+    history: history.slice(-6).map((m) => ({ role: m.role, content: m.content })),
   })
-
   return res.data.answer
 }

@@ -1,49 +1,24 @@
 import React from 'react'
 import { Bar, Line, Doughnut, Pie, Scatter } from 'react-chartjs-2'
+import {
+  Chart as ChartJS, CategoryScale, LinearScale, BarElement,
+  PointElement, LineElement, ArcElement, Tooltip, Legend,
+  BarController, LineController, DoughnutController, PieController, ScatterController
+} from 'chart.js'
 import type { ChartConfig } from '../../types'
 import { BASE_CHART_OPTIONS } from '../../constants/charts'
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  TimeScale,
-  BarElement,
-  PointElement,
-  LineElement,
-  ArcElement,
-  BarController,
-  LineController,
-  DoughnutController,
-  PieController,
-  ScatterController,
-  Tooltip,
-  Legend,
-  Title
-} from 'chart.js'
-
 
 ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  TimeScale,
-  BarElement,
-  PointElement,
-  LineElement,
-  ArcElement,
-  BarController,
-  LineController,
-  DoughnutController,
-  PieController,
-  ScatterController,
-  Tooltip,
-  Legend,
-  Title
+  CategoryScale, LinearScale, BarElement, PointElement, LineElement, ArcElement,
+  Tooltip, Legend, BarController, LineController, DoughnutController, PieController, ScatterController,
 )
 
-const MAP = { bar: Bar, line: Line, doughnut: Doughnut, pie: Pie, scatter: Scatter }
+const CHART_MAP = {
+  bar: Bar, line: Line, doughnut: Doughnut, pie: Pie, scatter: Scatter,
+} as const
 
 export default React.memo(function ChartPanel({ config }: { config: ChartConfig }) {
-  const Comp = MAP[config.type]
+  const Comp = CHART_MAP[config.type]
   if (!Comp) return null
 
   return (
@@ -51,8 +26,8 @@ export default React.memo(function ChartPanel({ config }: { config: ChartConfig 
       <p className="card-title">{config.title}</p>
       <div className="chart-container">
         <Comp
-          data={{ labels: config.labels, datasets: config.datasets }}
-          options={BASE_CHART_OPTIONS}
+          data={{ labels: config.labels, datasets: config.datasets as never }}
+          options={BASE_CHART_OPTIONS as never}
         />
       </div>
     </div>
