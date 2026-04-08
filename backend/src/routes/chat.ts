@@ -1,33 +1,34 @@
-import { Router, Request, Response, NextFunction } from 'express';
+import { Router, Request, Response } from 'express';
 import { DataAnalyzer } from '../services/aiHelper';
+import type { ChatHistoryItem } from '../types';
 
 const router = Router();
-const analyzer = new DataAnalyzer(); // single instance for reuse
+const analyzer = new DataAnalyzer();
 
-router.post('/', async (req: Request, res: Response, next: NextFunction) => {
-  const { question, summaryText } = req.body as {
+router.post('/', async (req: Request, res: Response) => {
+  const { question, summaryText, history } = req.body as {
     question?: string;
     summaryText?: string;
+    history?: ChatHistoryItem[];
   };
 
-  // Validate inputs
   if (!question?.trim()) {
-    return res.status(400).json({ error: 'Question is required' });
+    return res.status(400).json({ error: 'question is required' });
   }
-
-  if (!summaryText || typeof summaryText !== 'string' || !summaryText.trim()) {
-    return res.status(400).json({ error: 'summaryText is required and must be a string' });
+  if (!summaryText?.trim()) {
+    return res.status(400).json({ error: 'summaryText is required' });
   }
 
   try {
-    // Pass plain text summary and question as a prompt
-    const prompt = `Dataset Summary:\n${summaryText}\n\nQuestion: ${question.trim()}\nProvide a concise answer in plain text.`;
-    const answer = await analyzer.generateInsights(prompt); // reuse generateInsights for plain text output
-
-    res.json({ answer });
-  } catch (err: unknown) {
-    console.error('Error generating answer:', err);
-    res.status(500).json({ error: 'Failed to generate answer' });
+    const answer = await analyzer.answerQuestion(
+      summaryText.trim(),
+      question.trim(),
+      history ?? []
+    );
+    return res.json({ answer });
+  } catch (err) {
+    console.error('[chat] error:', err);
+    return res.status(500).json({ error: 'Failed to generate answer' });
   }
 });
 

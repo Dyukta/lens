@@ -1,25 +1,48 @@
-import { Router, Request, Response, NextFunction } from 'express';
+import { Router, Request, Response } from 'express';
 import { DataAnalyzer } from '../services/aiHelper';
 
 const router = Router();
-const analyzer = new DataAnalyzer(); // single instance
+const analyzer = new DataAnalyzer();
 
-router.post('/', async (req: Request, res: Response, next: NextFunction) => {
+router.post('/', async (req: Request, res: Response) => {
   const { summaryText } = req.body as { summaryText?: string };
 
-  // Validate request payload
-  if (!summaryText || typeof summaryText !== 'string' || !summaryText.trim()) {
-    return res.status(400).json({ error: 'summaryText is required and must be a string' });
+  if (!summaryText?.trim()) {
+    return res.status(400).json({ error: 'summaryText is required' });
   }
 
   try {
-    // Generate insights via the class
-    const insights = await analyzer.generateInsights(summaryText.trim());
-    res.json({ insights }); // plain text
-  } catch (err: unknown) {
-    console.error('Error generating insights:', err);
-    res.status(500).json({ error: 'Failed to generate insights' });
+    const raw = await analyzer.generateInsights(summaryText.trim());
+
+    // Parse AI output into structured Insight[]
+    const insights = parseInsights(raw);
+    return res.json({ insights });
+  } catch (err) {
+    console.error('[insights] error:', err);
+    return res.status(500).json({ error: 'Failed to generate insights' });
   }
 });
+
+function parseInsights(raw: string) {
+  const blocks = raw.trim().split(/\n\s*\n/); // split on blank lines
+  const validTypes = ['trend', 'anomaly', 'correlation', 'distribution', 'summary'];
+
+  return blocks
+    .map((block, i) => {
+      const titleMatch = block.match(/TITLE:\s*(.+)/i);
+      const typeMatch = block.match(/TYPE:\s*(.+)/i);
+      const descMatch = block.match(/DESCRIPTION:\s*(.+)/i);
+
+      const type = typeMatch?.[1]?.trim().toLowerCase() ?? 'summary';
+
+      return {
+        id: `insight-${Date.now()}-${i}`,
+        title: titleMatch?.[1]?.trim() ?? `Insight ${i + 1}`,
+        type: validTypes.includes(type) ? type : 'summary',
+        description: descMatch?.[1]?.trim() ?? block.trim(),
+      };
+    })
+    .filter((ins) => ins.description.length > 0);
+}
 
 export default router;

@@ -1,5 +1,5 @@
 import axios from 'axios'
-import type { DataSummary, Insight, ChatMessage } from '../types'
+import type { Insight, ChatMessage } from '../types'
 
 const api = axios.create({
   baseURL: 'http://localhost:5000/api',
@@ -7,19 +7,21 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 })
 
-export async function fetchInsights(summary: DataSummary): Promise<Insight[]> {
-  const res = await api.post<{ insights: Insight[] }>('/insights', { summary })
+// ── raw API calls only, no data transformation here ──────────────────────────
+
+export async function fetchInsights(summaryText: string): Promise<Insight[]> {
+  const res = await api.post<{ insights: Insight[] }>('/insights', { summaryText })
   return res.data.insights
 }
 
 export async function sendChatMessage(
   question: string,
-  summary: DataSummary,
+  summaryText: string,
   history: ChatMessage[]
 ): Promise<string> {
   const res = await api.post<{ answer: string }>('/chat', {
     question: question.trim(),
-    summary,
+    summaryText,
     history: history.slice(-6).map((m) => ({ role: m.role, content: m.content })),
   })
   return res.data.answer
