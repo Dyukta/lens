@@ -14,7 +14,6 @@ router.post('/', async (req: Request, res: Response) => {
   try {
     const raw = await analyzer.generateInsights(summaryText.trim());
 
-    // Parse AI output into structured Insight[]
     const insights = parseInsights(raw);
     return res.json({ insights });
   } catch (err) {
@@ -24,7 +23,7 @@ router.post('/', async (req: Request, res: Response) => {
 });
 
 function parseInsights(raw: string) {
-  const blocks = raw.trim().split(/\n\s*\n/); // split on blank lines
+  const blocks = raw.trim().split(/\n\s*\n/); 
   const validTypes = ['trend', 'anomaly', 'correlation', 'distribution', 'summary'];
 
   return blocks

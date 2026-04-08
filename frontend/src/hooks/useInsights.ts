@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useAppStore } from '../store/useAppStore'
-import { getInsights } from '../services/databridge' // ✅ import from databridge, not api
+import { getInsights } from '../services/databridge' 
 import type { ParsedCSV } from '../types'
 
 export function useInsights(csv: ParsedCSV | null) {
@@ -16,7 +16,7 @@ export function useInsights(csv: ParsedCSV | null) {
 
     setIsLoadingInsights(true)
 
-    getInsights(csv.summary)           // ✅ DataSummary → buildSummaryText → backend
+    getInsights(csv.summary)           
       .then((insights) => setInsights(insights))
       .catch(() => setInsights([]))
       .finally(() => setIsLoadingInsights(false))

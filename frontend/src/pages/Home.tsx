@@ -16,7 +16,7 @@ export default function Home() {
           <span className="gradient-text">through Lens</span>
         </h1>
         <p className="text-base mb-8" style={{ color: 'var(--color-muted)' }}>
-          Drop a CSV and get instant charts, insights, and a chatbot to explore your data.
+          Drop a CSV and get instant charts, insights and a chatbot to explore your data.
         </p>
         <UploadBox />
       </div>

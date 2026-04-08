@@ -1,18 +1,21 @@
 import { useState, useRef, useEffect } from 'react'
 import { Send, Sparkles } from 'lucide-react'
 import { useAppStore } from '../../store/useAppStore'
-import { sendChatMessage } from '../../services/api'
+import { askQuestion } from '../../services/databridge'
 
-const SUGGESTED = [
-  "What's the average?",
-  'Any outliers?',
-  'Show key trends',
-  'Summarize the data',
-]
+const SUGGESTED = ["What's the average?", 'Any outliers?', 'Show key trends', 'Summarize the data']
+
+function stripMarkdown(text: string): string {
+  return text
+    .replace(/\*\*(.*?)\*\*/g, '$1')
+    .replace(/\*(.*?)\*/g, '$1')
+    .replace(/`(.*?)`/g, '$1')
+    .replace(/^[-*]\s+/gm, '')
+    .trim()
+}
 
 export default function ChatBox() {
   const [input, setInput] = useState('')
-  const [sent, setSent] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
   const { parsedCSV, messages, isChatLoading, addMessage, updateMessage, setIsChatLoading } =
     useAppStore()
@@ -26,29 +29,16 @@ export default function ChatBox() {
     if (!trimmed || !parsedCSV || isChatLoading) return
 
     setInput('')
-    setSent(true)
-    setTimeout(() => setSent(false), 1200)
     setIsChatLoading(true)
 
-    addMessage({
-      id: Date.now().toString(),
-      role: 'user',
-      content: trimmed,
-      timestamp: Date.now(),
-    })
+    addMessage({ id: Date.now().toString(), role: 'user', content: trimmed, timestamp: Date.now() })
 
     const assistantId = `assistant-${Date.now()}`
-    addMessage({
-      id: assistantId,
-      role: 'assistant',
-      content: '',
-      timestamp: Date.now(),
-      isStreaming: true,
-    })
+    addMessage({ id: assistantId, role: 'assistant', content: '', timestamp: Date.now(), isStreaming: true })
 
     try {
-      const answer = await sendChatMessage(trimmed, parsedCSV.summary, messages)
-      updateMessage(assistantId, answer, true)
+      const answer = await askQuestion(trimmed, parsedCSV.summary, messages)
+      updateMessage(assistantId, stripMarkdown(answer), true)
     } catch {
       updateMessage(assistantId, 'Something went wrong. Please try again.', true)
     } finally {
@@ -56,62 +46,37 @@ export default function ChatBox() {
     }
   }
 
-  const isEmpty = messages.length === 0
-
   return (
     <div className="flex flex-col h-full">
-      <div
-        className="flex items-center gap-2.5 px-4 py-3 border-b shrink-0"
-        style={{ borderColor: 'var(--color-border)' }}
-      >
-        <div
-          className="w-7 h-7 rounded-full flex items-center justify-center"
-          style={{ background: 'var(--color-accent)' }}
-        >
+      <div className="flex items-center gap-2.5 px-4 py-3 border-b shrink-0" style={{ borderColor: 'var(--color-border)' }}>
+        <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: 'var(--color-accent)' }}>
           <Sparkles size={14} color="#fff" />
         </div>
         <div>
           <p className="text-sm font-semibold leading-none">Ask Lens</p>
-          <p className="text-xs mt-0.5" style={{ color: 'var(--color-muted)' }}>
-            Chat with your data
-          </p>
+          <p className="text-xs mt-0.5" style={{ color: 'var(--color-muted)' }}>Chat with your data</p>
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
-        {isEmpty ? (
+        {messages.length === 0 ? (
           <div className="flex flex-col items-center gap-4 pt-6">
-            <p className="text-xs text-center" style={{ color: 'var(--color-muted)' }}>
-              Ask anything about your data
-            </p>
+            <p className="text-xs text-center" style={{ color: 'var(--color-muted)' }}>Ask anything about your data</p>
             <div className="flex flex-wrap gap-2 justify-center">
               {SUGGESTED.map((s) => (
-                <button
-                  key={s}
-                  className="btn-outline text-xs px-3 py-1.5"
-                  onClick={() => send(s)}
-                >
-                  {s}
-                </button>
+                <button key={s} className="btn-outline text-xs px-3 py-1.5" onClick={() => send(s)}>{s}</button>
               ))}
             </div>
           </div>
         ) : (
           messages.map((m) => (
-            <div
-              key={m.id}
-              className={`flex animate-fade-in ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
-            >
+            <div key={m.id} className={`flex animate-fade-in ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               {m.isStreaming ? (
                 <div className="msg-assistant">
-                  <span className="typing-dot" />
-                  <span className="typing-dot" />
-                  <span className="typing-dot" />
+                  <span className="typing-dot" /><span className="typing-dot" /><span className="typing-dot" />
                 </div>
               ) : (
-                <div className={m.role === 'user' ? 'msg-user' : 'msg-assistant'}>
-                  {m.content}
-                </div>
+                <div className={m.role === 'user' ? 'msg-user' : 'msg-assistant'}>{m.content}</div>
               )}
             </div>
           ))
@@ -120,13 +85,7 @@ export default function ChatBox() {
       </div>
 
       <div className="px-4 py-3 border-t shrink-0" style={{ borderColor: 'var(--color-border)' }}>
-        <div
-          className="chat-input-wrap flex items-center gap-2 rounded-xl px-3 py-2"
-          style={{
-            background: 'var(--color-border)',
-            border: '1px solid var(--color-border-hi)',
-          }}
-        >
+        <div className="flex items-center gap-2 rounded-xl px-3 py-2" style={{ background: 'var(--color-border)', border: '1px solid var(--color-border-hi)' }}>
           <input
             className="flex-1 bg-transparent text-sm outline-none placeholder:text-[var(--color-muted)]"
             placeholder="Ask about your data…"
@@ -136,13 +95,8 @@ export default function ChatBox() {
             disabled={isChatLoading}
           />
           <button
-            className={`send-btn-ripple shrink-0 transition-all duration-150 disabled:opacity-40 ${sent ? 'text-white' : ''}`}
-            style={{
-              color: sent ? '#fff' : 'var(--color-accent)',
-              background: sent ? 'var(--color-accent)' : 'transparent',
-              borderRadius: '6px',
-              padding: '4px',
-            }}
+            className="shrink-0 transition-all duration-150 disabled:opacity-40"
+            style={{ color: 'var(--color-accent)', borderRadius: '6px', padding: '4px' }}
             onClick={() => send(input)}
             disabled={!input.trim() || isChatLoading}
             aria-label="Send"
@@ -150,9 +104,7 @@ export default function ChatBox() {
             <Send size={15} />
           </button>
         </div>
-        <p className="text-xs mt-1.5 text-center" style={{ color: 'var(--color-muted)' }}>
-          Enter to send · Shift+Enter for newline
-        </p>
+        <p className="text-xs mt-1.5 text-center" style={{ color: 'var(--color-muted)' }}>Enter to send · Shift+Enter for newline</p>
       </div>
     </div>
   )

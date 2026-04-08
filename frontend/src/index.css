@@ -13,7 +13,7 @@
   }
 }
 
-/* ─── Base ─────────────────────────────────────── */
+/*  Base */
 @layer base {
   *, *::before, *::after { box-sizing: border-box; }
 
@@ -29,7 +29,7 @@
   ::-webkit-scrollbar-thumb { @apply rounded-full; background: #2a2a3d; }
 }
 
-/* ─── Design tokens ─────────────────────────────── */
+/* Design tokens*/
 :root {
   --color-bg:        #0a0a0f;
   --color-surface:   #11111a;
@@ -41,7 +41,7 @@
   --color-accent-lo: rgba(124, 92, 252, 0.12);
 }
 
-/* ─── Components ────────────────────────────────── */
+/* Components */
 @layer components {
 
   /* Card */
@@ -89,10 +89,6 @@
   }
   .btn-outline:hover { border-color: var(--color-accent); color: var(--color-primary); }
 
-  /* Pill / badge */
-  .badge {
-    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium;
-  }
 
   /* Insight type colours */
   .insight-trend       { --insight-color: #5cf08a; }

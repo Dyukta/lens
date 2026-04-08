@@ -78,32 +78,21 @@ export function formatNumber(n: number): string {
   return fixed.endsWith('.00') ? fixed.slice(0, -3) : fixed
 }
 
-// ── buildSummaryText ──────────────────────────────────────────────────────────
-// Converts a DataSummary object into a plain text description for the AI API.
-// Used exclusively by databridge.ts before sending to backend.
-
 export function buildSummaryText(summary: DataSummary): string {
-  const lines: string[] = [
-    `File: ${summary.fileName}`,
-    `Rows: ${summary.rowCount}, Columns: ${summary.columnCount}`,
-    '',
-    'Columns:',
-  ]
-
-  for (const col of summary.columns) {
-    let line = `  - ${col.name} (${col.type}): ${col.uniqueCount} unique values, ${col.nullCount} nulls`
-
+  const cols = summary.columns.map((col) => {
+    let parts = `${col.name}(${col.type})`
+    if (col.nullCount > 0) parts += ` nulls:${col.nullCount}`
     if (col.type === 'numeric' && col.min !== undefined && col.max !== undefined) {
-      line += `, min=${formatNumber(col.min)}, max=${formatNumber(col.max)}`
-      if (col.mean !== undefined) line += `, mean=${formatNumber(col.mean)}`
+      parts += ` min:${formatNumber(col.min)} max:${formatNumber(col.max)}`
+      if (col.mean !== undefined) parts += ` mean:${formatNumber(col.mean)}`
     }
-
     if (col.type === 'categorical' && col.topValues?.length) {
-      line += `, top values: [${col.topValues.slice(0, 5).join(', ')}]`
+      parts += ` top:[${col.topValues.slice(0, 3).join(',')}]`
     }
+    return parts
+  }).join(' | ')
 
-    lines.push(line)
-  }
-
-  return lines.join('\n')
+  return `File:${summary.fileName} Rows:${summary.rowCount} Cols:${summary.columnCount}\n${cols}`
 }
+
+

@@ -7,7 +7,6 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 })
 
-// ── raw API calls only, no data transformation here ──────────────────────────
 
 export async function fetchInsights(summaryText: string): Promise<Insight[]> {
   const res = await api.post<{ insights: Insight[] }>('/insights', { summaryText })

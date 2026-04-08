@@ -13,10 +13,21 @@ const PORT = Number(process.env.PORT) || 5000
 
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim())
-  : ['http://localhost:5173', 'http://localhost:4173']
+  : ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:4173']
 
 app.use(helmet())
-app.use(cors({ origin: allowedOrigins }))
+app.use(cors({
+  origin: (origin, callback) => {
+  
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true)
+    } else {
+      callback(new Error(`CORS: origin ${origin} not allowed`))
+    }
+  },
+  methods: ['GET', 'POST'],
+  allowedHeaders: ['Content-Type'],
+}))
 app.use(express.json({ limit: '2mb' }))
 
 const aiLimiter = rateLimit({
@@ -27,7 +38,6 @@ const aiLimiter = rateLimit({
   legacyHeaders: false,
 })
 
-
 app.use('/api/insights', aiLimiter, insightsRouter)
 app.use('/api/chat', aiLimiter, chatRouter)
 
@@ -35,13 +45,11 @@ app.get('/api/health', (_req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    hasApiKey: Boolean(process.env.OPENAI_API_KEY),
+    hasApiKey: Boolean(process.env.GENERATIVE_API_KEY), 
   })
 })
 
-
 app.get('/', (_req, res) => res.send('Server is alive'))
-
 
 app.use((_req, res) => res.status(404).json({ error: 'Not found' }))
 
@@ -51,7 +59,8 @@ app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
   res.status(500).json({ error: message })
 })
 
-
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Lens backend running on http://localhost:${PORT}`)
+  console.log(`Allowed origins: ${allowedOrigins.join(', ')}`)
+  console.log(`Gemini API key: ${process.env.GENERATIVE_API_KEY ? 'loaded' : ' missing'}`)
 })
