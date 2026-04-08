@@ -1,4 +1,4 @@
-import type { ColumnStats, ColumnType, DataSummary, Insight } from '../types'
+import type { ColumnStats, ColumnType, DataSummary } from '../types'
 
 export function summarizeColumn(name: string, type: ColumnType, values: string[]): ColumnStats {
   let nullCount = 0
@@ -30,7 +30,15 @@ export function summarizeColumn(name: string, type: ColumnType, values: string[]
       if (n > max) max = n
     }
 
-    return { name, type, min, max, mean: parseFloat((sum / nums.length).toFixed(4)), uniqueCount, nullCount }
+    return {
+      name,
+      type,
+      min,
+      max,
+      mean: parseFloat((sum / nums.length).toFixed(4)),
+      uniqueCount,
+      nullCount,
+    }
   }
 
   if (type === 'categorical') {
@@ -68,148 +76,4 @@ export function formatNumber(n: number): string {
   if (abs >= 1_000) return (n / 1_000).toFixed(1) + 'K'
   const fixed = n.toFixed(2)
   return fixed.endsWith('.00') ? fixed.slice(0, -3) : fixed
-}
-
-function isIdentifierColumn(name: string): boolean {
-  return /\b(id|_id|key|code|number|num|no)\b/i.test(name) || /id$/i.test(name)
-}
-
-function pearsonCorrelation(xs: number[], ys: number[]): number {
-  const n = xs.length
-  if (n < 3) return 0
-
-  const meanX = xs.reduce((a, b) => a + b, 0) / n
-  const meanY = ys.reduce((a, b) => a + b, 0) / n
-
-  let num = 0, denomX = 0, denomY = 0
-
-  for (let i = 0; i < n; i++) {
-    const dx = xs[i] - meanX
-    const dy = ys[i] - meanY
-    num += dx * dy
-    denomX += dx * dx
-    denomY += dy * dy
-  }
-
-  const denom = Math.sqrt(denomX * denomY)
-  return denom === 0 ? 0 : num / denom
-}
-
-export function generateLocalInsights(csv: {
-  rows: Record<string, string>[]
-  summary: DataSummary
-}): Insight[] {
-  const { rows, summary } = csv
-  const insights: Insight[] = []
-  let idCounter = 0
-  const id = () => `local-${idCounter++}`
-
-  const numericCols = summary.columns.filter(
-    (c) => c.type === 'numeric' && !isIdentifierColumn(c.name)
-  )
-  const catCols = summary.columns.filter((c) => c.type === 'categorical')
-  const dateCols = summary.columns.filter((c) => c.type === 'date')
-
-  const colsWithNulls = summary.columns.filter((c) => c.nullCount > 0)
-  if (colsWithNulls.length) {
-    const worst = [...colsWithNulls].sort((a, b) => b.nullCount - a.nullCount)[0]
-    const pct = ((worst.nullCount / summary.rowCount) * 100).toFixed(0)
-    insights.push({
-      id: id(),
-      type: 'anomaly',
-      title: `Missing data in ${worst.name}`,
-      description: `${worst.nullCount} of ${summary.rowCount} rows (${pct}%) have no value for "${worst.name}".`,
-    })
-  }
-
-  if (catCols.length && numericCols.length) {
-    const cat = catCols[0]
-    const num =
-      numericCols.find((c) => /total|revenue|amount|sales|price|value|spend/i.test(c.name)) ??
-      numericCols[0]
-
-    const buckets: Record<string, { sum: number; count: number }> = {}
-    for (const row of rows) {
-      const key = row[cat.name] || 'Unknown'
-      const val = parseFloat((row[num.name] ?? '').replace(/[$,%]/g, '').trim())
-      if (isNaN(val)) continue
-      if (!buckets[key]) buckets[key] = { sum: 0, count: 0 }
-      buckets[key].sum += val
-      buckets[key].count++
-    }
-
-    const avgs = Object.entries(buckets)
-      .map(([k, v]) => ({ key: k, avg: v.sum / v.count, total: v.sum, count: v.count }))
-      .sort((a, b) => b.avg - a.avg)
-
-    if (avgs.length >= 2) {
-      const top = avgs[0]
-      const bottom = avgs[avgs.length - 1]
-      const diff =
-        bottom.avg !== 0 ? (((top.avg - bottom.avg) / bottom.avg) * 100).toFixed(0) : '0'
-
-      insights.push({
-        id: id(),
-        type: 'trend',
-        title: `${top.key} leads ${cat.name}`,
-        description: `${formatNumber(top.avg)} vs ${formatNumber(bottom.avg)} (${diff}% difference)`,
-      })
-    }
-
-    if (/total|revenue|amount|sales|price|value|spend/i.test(num.name)) {
-      const grandTotal = avgs.reduce((a, b) => a + b.total, 0)
-      if (grandTotal > 0) {
-        const topShare = ((avgs[0].total / grandTotal) * 100).toFixed(0)
-        insights.push({
-          id: id(),
-          type: 'summary',
-          title: `Total ${num.name}: ${formatNumber(grandTotal)}`,
-          description: `${avgs[0].key} contributes ${topShare}%`,
-        })
-      }
-    }
-  }
-
-  if (numericCols.length >= 2) {
-    for (let i = 0; i < numericCols.length - 1; i++) {
-      for (let j = i + 1; j < numericCols.length; j++) {
-        const colA = numericCols[i]
-        const colB = numericCols[j]
-        const pairs: [number, number][] = []
-
-        for (const row of rows) {
-          const a = parseFloat((row[colA.name] ?? '').replace(/[$,%]/g, '').trim())
-          const b = parseFloat((row[colB.name] ?? '').replace(/[$,%]/g, '').trim())
-          if (!isNaN(a) && !isNaN(b)) pairs.push([a, b])
-        }
-
-        if (pairs.length < 5) continue
-
-        const r = pearsonCorrelation(pairs.map(([a]) => a), pairs.map(([, b]) => b))
-        if (Math.abs(r) >= 0.6) {
-          insights.push({
-            id: id(),
-            type: 'correlation',
-            title: `${colA.name} vs ${colB.name}`,
-            description: `r = ${r.toFixed(2)} — ${Math.abs(r) >= 0.8 ? 'strong' : 'moderate'} ${r > 0 ? 'positive' : 'negative'} correlation`,
-          })
-        }
-      }
-    }
-  }
-
-  if (dateCols.length) {
-    const col = dateCols[0]
-    const dates = rows.map((r) => r[col.name]).filter(Boolean).sort()
-    if (dates.length >= 2) {
-      insights.push({
-        id: id(),
-        type: 'summary',
-        title: 'Date range',
-        description: `${dates[0]} → ${dates[dates.length - 1]}`,
-      })
-    }
-  }
-
-  return insights
 }
