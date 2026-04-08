@@ -1,30 +1,27 @@
-import { Router } from 'express'
+import { Router, Request, Response, NextFunction } from 'express'
 import { generateInsights } from '../services/aiHelper'
-import { DataSummary } from '../types'
+import type { DataSummary } from '../types'
 
 const router = Router()
 
-router.post('/', async (req, res) => {
+router.post('/', async (req: Request, res: Response, next: NextFunction) => {
+  const { summary } = req.body as { summary?: DataSummary }
+
+  if (!summary || !Array.isArray(summary.columns) || typeof summary.rowCount !== 'number') {
+    res.status(400).json({ error: 'Invalid summary payload' })
+    return
+  }
+
+  if (summary.rowCount <= 0) {
+    res.status(400).json({ error: 'Dataset has no rows' })
+    return
+  }
+
   try {
-    const { summary } = req.body as { summary?: DataSummary }
-
-    if (
-      !summary ||
-      !Array.isArray(summary.columns) ||
-      typeof summary.rowCount !== 'number'
-    ) {
-      return res.status(400).json({ error: 'Invalid summary payload' })
-    }
-
-    if (summary.rowCount <= 0) {
-      return res.status(400).json({ error: 'Dataset has no rows' })
-    }
-
     const insights = await generateInsights(summary)
-    return res.json({ insights })
+    res.json({ insights })
   } catch (err) {
-    console.error('[/insights]', err)
-    return res.status(500).json({ error: 'Failed to generate insights' })
+    next(err)
   }
 })
 

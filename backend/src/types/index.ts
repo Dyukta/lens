@@ -18,12 +18,7 @@ export interface DataSummary {
   columns: ColumnStats[]
 }
 
-export type InsightType =
-  | 'trend'
-  | 'anomaly'
-  | 'correlation'
-  | 'distribution'
-  | 'summary'
+export type InsightType = 'trend' | 'anomaly' | 'correlation' | 'distribution' | 'summary'
 
 export interface Insight {
   id: string

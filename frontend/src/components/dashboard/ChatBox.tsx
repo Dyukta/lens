@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { Send, Sparkles } from 'lucide-react'
 import { useAppStore } from '../../store/useAppStore'
 import { sendChatMessage } from '../../services/api'
 
@@ -12,7 +13,8 @@ const SUGGESTED = [
 export default function ChatBox() {
   const [input, setInput] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
-  const { parsedCSV, messages, isChatLoading, addMessage, updateMessage, setIsChatLoading } = useAppStore()
+  const { parsedCSV, messages, isChatLoading, addMessage, updateMessage, setIsChatLoading } =
+    useAppStore()
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -25,11 +27,21 @@ export default function ChatBox() {
     setInput('')
     setIsChatLoading(true)
 
-    const userMsg = { id: Date.now().toString(), role: 'user' as const, content: trimmed, timestamp: Date.now() }
-    addMessage(userMsg)
+    addMessage({
+      id: Date.now().toString(),
+      role: 'user',
+      content: trimmed,
+      timestamp: Date.now(),
+    })
 
     const assistantId = `assistant-${Date.now()}`
-    addMessage({ id: assistantId, role: 'assistant', content: '', timestamp: Date.now(), isStreaming: true })
+    addMessage({
+      id: assistantId,
+      role: 'assistant',
+      content: '',
+      timestamp: Date.now(),
+      isStreaming: true,
+    })
 
     try {
       const answer = await sendChatMessage(trimmed, parsedCSV.summary, messages)
@@ -45,15 +57,21 @@ export default function ChatBox() {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center gap-2.5 px-4 py-3 border-b shrink-0"
-        style={{ borderColor: 'var(--color-border)' }}>
-        <div className="w-7 h-7 rounded-full flex items-center justify-center text-sm"
-          style={{ background: 'var(--color-accent)' }}>
-          ✦
+      <div
+        className="flex items-center gap-2.5 px-4 py-3 border-b shrink-0"
+        style={{ borderColor: 'var(--color-border)' }}
+      >
+        <div
+          className="w-7 h-7 rounded-full flex items-center justify-center"
+          style={{ background: 'var(--color-accent)' }}
+        >
+          <Sparkles size={14} color="#fff" />
         </div>
         <div>
           <p className="text-sm font-semibold leading-none">Ask Lens</p>
-          <p className="text-xs mt-0.5" style={{ color: 'var(--color-muted)' }}>Chat with your data</p>
+          <p className="text-xs mt-0.5" style={{ color: 'var(--color-muted)' }}>
+            Chat with your data
+          </p>
         </div>
       </div>
 
@@ -91,9 +109,17 @@ export default function ChatBox() {
         <div ref={bottomRef} />
       </div>
 
-      <div className="px-4 py-3 border-t shrink-0" style={{ borderColor: 'var(--color-border)' }}>
-        <div className="flex items-center gap-2 rounded-xl px-3 py-2"
-          style={{ background: 'var(--color-border)', border: '1px solid var(--color-border-hi)' }}>
+      <div
+        className="px-4 py-3 border-t shrink-0"
+        style={{ borderColor: 'var(--color-border)' }}
+      >
+        <div
+          className="flex items-center gap-2 rounded-xl px-3 py-2"
+          style={{
+            background: 'var(--color-border)',
+            border: '1px solid var(--color-border-hi)',
+          }}
+        >
           <input
             className="flex-1 bg-transparent text-sm outline-none placeholder:text-[var(--color-muted)]"
             placeholder="Ask about your data…"
@@ -103,13 +129,13 @@ export default function ChatBox() {
             disabled={isChatLoading}
           />
           <button
-            className="text-xs shrink-0 disabled:opacity-40"
+            className="shrink-0 disabled:opacity-40 transition-opacity"
             style={{ color: 'var(--color-accent)' }}
             onClick={() => send(input)}
             disabled={!input.trim() || isChatLoading}
             aria-label="Send"
           >
-            ↑
+            <Send size={15} />
           </button>
         </div>
         <p className="text-xs mt-1.5 text-center" style={{ color: 'var(--color-muted)' }}>

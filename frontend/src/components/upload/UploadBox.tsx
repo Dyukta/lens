@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Upload, FileText } from 'lucide-react'
 import { useCSVParser } from '../../hooks/useCSVParser'
 
 export default function UploadBox() {
@@ -54,9 +55,11 @@ export default function UploadBox() {
       />
 
       <div className="flex flex-col items-center gap-3 pointer-events-none">
-        <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl"
-          style={{ background: 'var(--color-accent)', color: '#fff' }}>
-          ↑
+        <div
+          className="w-14 h-14 rounded-2xl flex items-center justify-center"
+          style={{ background: 'var(--color-accent)', color: '#fff' }}
+        >
+          <Upload size={24} />
         </div>
         <div>
           <p className="font-semibold text-base">
@@ -68,7 +71,8 @@ export default function UploadBox() {
         </div>
         {!loading && (
           <p className="text-xs flex items-center gap-1.5" style={{ color: 'var(--color-muted)' }}>
-            <span>📄</span> CSV files with headers
+            <FileText size={12} />
+            CSV files with headers
           </p>
         )}
       </div>

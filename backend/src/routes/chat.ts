@@ -1,35 +1,35 @@
-import { Router } from 'express'
+import { Router, Request, Response, NextFunction } from 'express'
 import { answerQuestion } from '../services/aiHelper'
-import { DataSummary, ChatHistoryItem } from '../types'
+import type { DataSummary, ChatHistoryItem } from '../types'
 
 const router = Router()
 
-router.post('/', async (req, res) => {
+router.post('/', async (req: Request, res: Response, next: NextFunction) => {
+  const { question, summary, history } = req.body as {
+    question?: string
+    summary?: DataSummary
+    history?: ChatHistoryItem[]
+  }
+
+  if (typeof question !== 'string' || !question.trim()) {
+    res.status(400).json({ error: 'Question is required' })
+    return
+  }
+
+  if (!summary || !Array.isArray(summary.columns)) {
+    res.status(400).json({ error: 'Invalid summary payload' })
+    return
+  }
+
   try {
-    const { question, summary, history } = req.body as {
-      question?: string
-      summary?: DataSummary
-      history?: ChatHistoryItem[]
-    }
-
-    if (typeof question !== 'string' || !question.trim()) {
-      return res.status(400).json({ error: 'Question is required' })
-    }
-
-    if (!summary || !Array.isArray(summary.columns)) {
-      return res.status(400).json({ error: 'Invalid summary payload' })
-    }
-
     const answer = await answerQuestion(
       question.trim(),
       summary,
       Array.isArray(history) ? history : []
     )
-
-    return res.json({ answer })
+    res.json({ answer })
   } catch (err) {
-    console.error('[/chat]', err)
-    return res.status(500).json({ error: 'Failed to process question' })
+    next(err)
   }
 })
 
