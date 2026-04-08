@@ -27,6 +27,16 @@ export const MAX_SCATTER_POINTS = 200
 export const BASE_CHART_OPTIONS = {
   responsive: true,
   maintainAspectRatio: false,
+  animation: {
+    duration: 600,
+    easing: 'easeOutQuart' as const,
+  },
+  animations: {
+    y: {
+      from: (ctx: { chart: { scales: { y?: { bottom: number } } } }) =>
+        ctx.chart.scales.y?.bottom ?? 0,
+    },
+  },
   plugins: {
     legend: {
       labels: {

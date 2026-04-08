@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Upload, FileText } from 'lucide-react'
 import { useCSVParser } from '../../hooks/useCSVParser'
@@ -7,9 +7,28 @@ export default function UploadBox() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
+  const [progress, setProgress] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const { parseFile } = useCSVParser()
   const navigate = useNavigate()
+
+  useEffect(() => {
+    if (!loading) {
+      if (intervalRef.current) clearInterval(intervalRef.current)
+      setProgress(0)
+      return
+    }
+
+    setProgress(10)
+    intervalRef.current = setInterval(() => {
+      setProgress((p) => (p >= 85 ? 85 : p + Math.random() * 12))
+    }, 120)
+
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current)
+    }
+  }, [loading])
 
   const handle = useCallback(async (file: File) => {
     if (!file.name.endsWith('.csv')) {
@@ -20,10 +39,10 @@ export default function UploadBox() {
     setLoading(true)
     try {
       await parseFile(file)
-      navigate('/dashboard')
+      setProgress(100)
+      setTimeout(() => navigate('/dashboard'), 150)
     } catch {
       setError('Failed to process file. Check that it has headers and valid data.')
-    } finally {
       setLoading(false)
     }
   }, [parseFile, navigate])
@@ -40,7 +59,7 @@ export default function UploadBox() {
 
   return (
     <div
-      className={`drop-zone${isDragging ? ' drag-over' : ''}`}
+      className={`drop-zone group${isDragging ? ' drag-over' : ''}`}
       onClick={() => !loading && inputRef.current?.click()}
       onDrop={onDrop}
       onDragOver={onDragOver}
@@ -56,7 +75,7 @@ export default function UploadBox() {
 
       <div className="flex flex-col items-center gap-3 pointer-events-none">
         <div
-          className="w-14 h-14 rounded-2xl flex items-center justify-center"
+          className="upload-icon-wrap w-14 h-14 rounded-2xl flex items-center justify-center"
           style={{ background: 'var(--color-accent)', color: '#fff' }}
         >
           <Upload size={24} />
@@ -76,6 +95,22 @@ export default function UploadBox() {
           </p>
         )}
       </div>
+
+      {loading && (
+        <div
+          className="mt-4 h-0.5 rounded-full overflow-hidden"
+          style={{ background: 'var(--color-border-hi)' }}
+        >
+          <div
+            className="h-full rounded-full"
+            style={{
+              width: `${progress}%`,
+              background: 'var(--color-accent)',
+              transition: progress === 100 ? 'width 0.15s ease' : 'width 0.1s linear',
+            }}
+          />
+        </div>
+      )}
 
       {error && (
         <p className="mt-4 text-sm text-center" style={{ color: '#fc5c5c' }}>{error}</p>

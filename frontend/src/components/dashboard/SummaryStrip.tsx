@@ -1,5 +1,49 @@
+import { useEffect, useRef, useState } from 'react'
 import { useAppStore } from '../../store/useAppStore'
 import { formatNumber } from '../../utils/dataSummarizer'
+
+function useCountUp(target: number, duration = 600) {
+  const [value, setValue] = useState(0)
+  const rafRef = useRef<number>(0)
+
+  useEffect(() => {
+    let current = 0
+    const steps = 20
+    const increment = Math.ceil(target / steps)
+
+    const tick = () => {
+      current += increment
+      if (current >= target) {
+        setValue(target)
+        return
+      }
+      setValue(current)
+      rafRef.current = requestAnimationFrame(tick)
+    }
+
+    rafRef.current = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(rafRef.current)
+  }, [target, duration])
+
+  return value
+}
+
+interface StatCardProps {
+  label: string
+  value: string
+}
+
+function StatCard({ label, value }: StatCardProps) {
+  const isInteger = /^\d+$/.test(value)
+  const counted = useCountUp(isInteger ? parseInt(value, 10) : 0)
+
+  return (
+    <div className="stat-card">
+      <p className="stat-label">{label}</p>
+      <p className="stat-value">{isInteger ? counted : value}</p>
+    </div>
+  )
+}
 
 export default function SummaryStrip() {
   const summary = useAppStore((s) => s.parsedCSV?.summary)
@@ -29,13 +73,12 @@ export default function SummaryStrip() {
   ]
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 px-5 py-4 border-b"
-      style={{ borderColor: 'var(--color-border)' }}>
+    <div
+      className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 px-5 py-4 border-b"
+      style={{ borderColor: 'var(--color-border)' }}
+    >
       {stats.map((s) => (
-        <div key={s.label} className="stat-card">
-          <p className="stat-label">{s.label}</p>
-          <p className="stat-value">{s.value}</p>
-        </div>
+        <StatCard key={s.label} label={s.label} value={s.value} />
       ))}
     </div>
   )

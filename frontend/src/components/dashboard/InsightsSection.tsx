@@ -26,13 +26,22 @@ export default function InsightsSection() {
     <section>
       <div className="flex items-center gap-2 mb-3">
         <span className="w-2 h-2 rounded-full" style={{ background: 'var(--color-accent)' }} />
-        <h2 className="text-sm font-semibold uppercase tracking-widest" style={{ color: 'var(--color-muted)' }}>
+        <h2
+          className="text-sm font-semibold uppercase tracking-widest"
+          style={{ color: 'var(--color-muted)' }}
+        >
           Insights
         </h2>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
-        {insights.map((insight) => (
-          <InsightCard key={insight.id} insight={insight} />
+        {insights.map((insight, i) => (
+          <div
+            key={insight.id}
+            className="animate-fade-in"
+            style={{ animationDelay: `${i * 80}ms`, animationFillMode: 'both' }}
+          >
+            <InsightCard insight={insight} />
+          </div>
         ))}
       </div>
     </section>

@@ -12,6 +12,7 @@ const SUGGESTED = [
 
 export default function ChatBox() {
   const [input, setInput] = useState('')
+  const [sent, setSent] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
   const { parsedCSV, messages, isChatLoading, addMessage, updateMessage, setIsChatLoading } =
     useAppStore()
@@ -25,6 +26,8 @@ export default function ChatBox() {
     if (!trimmed || !parsedCSV || isChatLoading) return
 
     setInput('')
+    setSent(true)
+    setTimeout(() => setSent(false), 1200)
     setIsChatLoading(true)
 
     addMessage({
@@ -83,7 +86,11 @@ export default function ChatBox() {
             </p>
             <div className="flex flex-wrap gap-2 justify-center">
               {SUGGESTED.map((s) => (
-                <button key={s} className="btn-outline text-xs px-3 py-1.5" onClick={() => send(s)}>
+                <button
+                  key={s}
+                  className="btn-outline text-xs px-3 py-1.5"
+                  onClick={() => send(s)}
+                >
                   {s}
                 </button>
               ))}
@@ -91,7 +98,10 @@ export default function ChatBox() {
           </div>
         ) : (
           messages.map((m) => (
-            <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+            <div
+              key={m.id}
+              className={`flex animate-fade-in ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
+            >
               {m.isStreaming ? (
                 <div className="msg-assistant">
                   <span className="typing-dot" />
@@ -114,7 +124,7 @@ export default function ChatBox() {
         style={{ borderColor: 'var(--color-border)' }}
       >
         <div
-          className="flex items-center gap-2 rounded-xl px-3 py-2"
+          className="chat-input-wrap flex items-center gap-2 rounded-xl px-3 py-2"
           style={{
             background: 'var(--color-border)',
             border: '1px solid var(--color-border-hi)',
@@ -129,8 +139,15 @@ export default function ChatBox() {
             disabled={isChatLoading}
           />
           <button
-            className="shrink-0 disabled:opacity-40 transition-opacity"
-            style={{ color: 'var(--color-accent)' }}
+            className={`send-btn-ripple shrink-0 transition-all duration-150 disabled:opacity-40 ${
+              sent ? 'text-white' : ''
+            }`}
+            style={{
+              color: sent ? '#fff' : 'var(--color-accent)',
+              background: sent ? 'var(--color-accent)' : 'transparent',
+              borderRadius: '6px',
+              padding: '4px',
+            }}
             onClick={() => send(input)}
             disabled={!input.trim() || isChatLoading}
             aria-label="Send"
