@@ -2,38 +2,53 @@ import 'dotenv/config';
 import fetch from 'node-fetch';
 
 export class DataAnalyzer {
-  private apiUrl =
-    'https://generativelanguage.googleapis.com/v1beta/models/text-bison-001:generateText';
+  private model = 'gemini-2.0-flash'; // ✅ valid model name
   private apiKey: string;
 
   constructor() {
     this.apiKey = process.env.GENERATIVE_API_KEY || '';
+    console.log('API key loaded:', this.apiKey ? '✅ found' : '❌ missing');
     if (!this.apiKey) {
       throw new Error('GENERATIVE_API_KEY is missing from .env');
     }
   }
 
+  private get apiUrl(): string {
+    return `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent?key=${this.apiKey}`;
+  }
+
   private async callApi(promptText: string, temperature = 0.3, maxTokens = 600): Promise<string> {
     const body = {
-      prompt: { text: promptText }, // ✅ correct text-bison format
-      temperature,
-      maxOutputTokens: maxTokens,
+      contents: [
+        {
+          parts: [{ text: promptText }], // ✅ correct Gemini format
+        },
+      ],
+      generationConfig: {
+        temperature,
+        maxOutputTokens: maxTokens, // ✅ must be inside generationConfig
+      },
     };
 
-    const res = await fetch(`${this.apiUrl}?key=${this.apiKey}`, {
+    console.log('Calling Gemini API:', this.model);
+
+    const res = await fetch(this.apiUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': this.apiKey, // ✅ key in header AND url for safety
+      },
       body: JSON.stringify(body),
     });
 
     if (!res.ok) {
       const errText = await res.text();
-      throw new Error(`API error ${res.status}: ${errText}`);
+      throw new Error(`Gemini API error ${res.status}: ${errText}`);
     }
 
     const data: any = await res.json();
-    const output = data?.candidates?.[0]?.output ?? '';
-    if (!output) throw new Error('Empty response from AI API');
+    const output = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? ''; // ✅ correct Gemini response path
+    if (!output) throw new Error('Empty response from Gemini API');
     return output;
   }
 
@@ -41,7 +56,7 @@ export class DataAnalyzer {
     const prompt = `
 You are a data analyst. Analyze the dataset below and return exactly 4 insights.
 
-Each insight MUST follow this exact format (no deviation):
+Each insight MUST follow this exact format:
 TITLE: <short title>
 TYPE: <one of: trend, anomaly, correlation, distribution, summary>
 DESCRIPTION: <one sentence description>
