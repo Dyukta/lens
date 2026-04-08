@@ -11,15 +11,8 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
     history?: ChatHistoryItem[]
   }
 
-  if (typeof question !== 'string' || !question.trim()) {
-    res.status(400).json({ error: 'Question is required' })
-    return
-  }
-
-  if (!summary || !Array.isArray(summary.columns)) {
-    res.status(400).json({ error: 'Invalid summary payload' })
-    return
-  }
+  if (!question?.trim()) return res.status(400).json({ error: 'Question is required' })
+  if (!summary || !Array.isArray(summary.columns)) return res.status(400).json({ error: 'Invalid summary payload' })
 
   try {
     const answer = await answerQuestion(

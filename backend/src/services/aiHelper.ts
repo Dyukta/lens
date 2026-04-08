@@ -1,10 +1,7 @@
 import OpenAI from 'openai'
 import type { DataSummary, Insight, ChatHistoryItem } from '../types'
 
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
-
+const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 const MODEL = 'gpt-4o-mini'
 
 function buildSummaryText(summary: DataSummary): string {
@@ -12,22 +9,14 @@ function buildSummaryText(summary: DataSummary): string {
     `File: ${summary.fileName}`,
     `Rows: ${summary.rowCount} | Columns: ${summary.columnCount}`,
     '',
-    'Column Details:',
+    'Column Details:'
   ]
 
   for (const col of summary.columns) {
     if (col.type === 'numeric') {
-      lines.push(
-        `• ${col.name} [numeric] — min: ${col.min ?? 'n/a'}, max: ${col.max ?? 'n/a'}, mean: ${
-          col.mean !== undefined ? col.mean.toFixed(2) : 'n/a'
-        }, nulls: ${col.nullCount}`
-      )
+      lines.push(`• ${col.name} [numeric] — min: ${col.min ?? 'n/a'}, max: ${col.max ?? 'n/a'}, mean: ${col.mean?.toFixed(2) ?? 'n/a'}, nulls: ${col.nullCount}`)
     } else if (col.type === 'categorical') {
-      lines.push(
-        `• ${col.name} [categorical] — ${col.uniqueCount} unique, top: ${
-          col.topValues?.join(', ') ?? 'n/a'
-        }, nulls: ${col.nullCount}`
-      )
+      lines.push(`• ${col.name} [categorical] — ${col.uniqueCount} unique, top: ${col.topValues?.join(', ') ?? 'n/a'}, nulls: ${col.nullCount}`)
     } else if (col.type === 'date') {
       lines.push(`• ${col.name} [date] — ${col.uniqueCount} unique, nulls: ${col.nullCount}`)
     } else {
@@ -60,38 +49,29 @@ Each description should be one concise sentence with a specific number or observ
   const res = await client.chat.completions.create({
     model: MODEL,
     temperature: 0.3,
-    messages: [{ role: 'user', content: prompt }],
+    messages: [{ role: 'user', content: prompt }]
   })
 
   const raw = res.choices[0]?.message?.content ?? '[]'
   const parsed = extractJSON(raw)
 
-  if (!Array.isArray(parsed)) {
-    throw new Error('Model returned non-array insights response')
-  }
+  if (!Array.isArray(parsed)) throw new Error('Model returned non-array insights response')
 
   const valid = parsed.filter(
     (item): item is Insight =>
-      typeof item === 'object' &&
-      item !== null &&
+      item && typeof item === 'object' &&
       typeof item.id === 'string' &&
       typeof item.title === 'string' &&
       typeof item.description === 'string' &&
-      ['trend', 'anomaly', 'correlation', 'distribution', 'summary'].includes(item.type)
+      ['trend','anomaly','correlation','distribution','summary'].includes(item.type)
   )
 
-  if (valid.length === 0) {
-    throw new Error('Model returned no valid insight objects')
-  }
+  if (valid.length === 0) throw new Error('Model returned no valid insight objects')
 
   return valid
 }
 
-export async function answerQuestion(
-  question: string,
-  summary: DataSummary,
-  history: ChatHistoryItem[]
-): Promise<string> {
+export async function answerQuestion(question: string, summary: DataSummary, history: ChatHistoryItem[]): Promise<string> {
   const system = `You are a concise data analyst assistant.
 
 Dataset:
@@ -108,16 +88,12 @@ Rules:
     temperature: 0.4,
     messages: [
       { role: 'system', content: system },
-      ...history.map((h) => ({ role: h.role, content: h.content })),
-      { role: 'user', content: question },
-    ],
+      ...history.map(h => ({ role: h.role, content: h.content })),
+      { role: 'user', content: question }
+    ]
   })
 
   const text = res.choices[0]?.message?.content
-
-  if (!text) {
-    throw new Error('Model returned empty response')
-  }
-
+  if (!text) throw new Error('Model returned empty response')
   return text.trim()
 }

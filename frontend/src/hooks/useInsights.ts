@@ -3,9 +3,12 @@ import { useAppStore } from '../store/useAppStore'
 import { fetchInsights } from '../services/api'
 import type { ParsedCSV } from '../types'
 
+
 export function useInsights(csv: ParsedCSV | null) {
   const { setInsights, setIsLoadingInsights } = useAppStore()
   const lastFileRef = useRef<string | null>(null)
+
+  console.log('csv:', csv);
 
   useEffect(() => {
     if (!csv) return

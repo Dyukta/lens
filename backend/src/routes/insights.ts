@@ -8,13 +8,11 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
   const { summary } = req.body as { summary?: DataSummary }
 
   if (!summary || !Array.isArray(summary.columns) || typeof summary.rowCount !== 'number') {
-    res.status(400).json({ error: 'Invalid summary payload' })
-    return
+    return res.status(400).json({ error: 'Invalid summary payload' })
   }
 
   if (summary.rowCount <= 0) {
-    res.status(400).json({ error: 'Dataset has no rows' })
-    return
+    return res.status(400).json({ error: 'Dataset has no rows' })
   }
 
   try {

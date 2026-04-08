@@ -119,10 +119,7 @@ export default function ChatBox() {
         <div ref={bottomRef} />
       </div>
 
-      <div
-        className="px-4 py-3 border-t shrink-0"
-        style={{ borderColor: 'var(--color-border)' }}
-      >
+      <div className="px-4 py-3 border-t shrink-0" style={{ borderColor: 'var(--color-border)' }}>
         <div
           className="chat-input-wrap flex items-center gap-2 rounded-xl px-3 py-2"
           style={{
@@ -139,9 +136,7 @@ export default function ChatBox() {
             disabled={isChatLoading}
           />
           <button
-            className={`send-btn-ripple shrink-0 transition-all duration-150 disabled:opacity-40 ${
-              sent ? 'text-white' : ''
-            }`}
+            className={`send-btn-ripple shrink-0 transition-all duration-150 disabled:opacity-40 ${sent ? 'text-white' : ''}`}
             style={{
               color: sent ? '#fff' : 'var(--color-accent)',
               background: sent ? 'var(--color-accent)' : 'transparent',

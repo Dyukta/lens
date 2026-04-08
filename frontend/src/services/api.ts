@@ -2,7 +2,7 @@ import axios from 'axios'
 import type { DataSummary, Insight, ChatMessage } from '../types'
 
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: 'http://localhost:5000/api',
   timeout: 60_000,
   headers: { 'Content-Type': 'application/json' },
 })
