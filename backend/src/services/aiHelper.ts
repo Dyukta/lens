@@ -13,8 +13,7 @@ export class DataAnalyzer {
   private apiUrl =
     'https://generativelanguage.googleapis.com/v1beta/models/text-bison-001:generateText';
 
-  // Hardcoded API key
-  private apiKey = 'AIzaSyAUwvn-q38XjDRfuRdrJElswRIXzudSk3c';
+
 
   constructor() {
     if (!this.apiKey) {
