@@ -1,14 +1,6 @@
-import 'dotenv/config'; // loads .env automatically
+import 'dotenv/config';
 import fetch from 'node-fetch'; // Node 18+ has fetch globally
-import { DataSummary, Insight, ChatHistoryItem } from '../types';
-
-interface ApiCandidate {
-  content: string;
-}
-
-interface ApiResponse {
-  candidates?: ApiCandidate[];
-}
+import { DataSummary, ChatHistoryItem } from '../types';
 
 export class DataAnalyzer {
   private apiUrl =
@@ -16,7 +8,6 @@ export class DataAnalyzer {
   private apiKey: string;
 
   constructor() {
-    // Load API key from environment variable
     this.apiKey = process.env.GENERATIVE_API_KEY || '';
     if (!this.apiKey) {
       throw new Error('API key is required. Set GENERATIVE_API_KEY in your .env file');
@@ -72,40 +63,18 @@ export class DataAnalyzer {
 
     if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
 
-    const data = (await res.json()) as ApiResponse;
+    const data: any = await res.json();
+    // Return the text content directly without parsing JSON
     return data.candidates?.[0]?.content ?? '';
   }
 
-  async generateInsights(summary: DataSummary): Promise<Insight[]> {
+  async generateInsights(summary: DataSummary): Promise<string> {
     const prompt = `
-Analyze this dataset and return exactly 4-6 insights as a JSON array.
+Analyze this dataset and provide 4-6 insights in plain text.
 ${this.buildSummaryText(summary)}
-
-Return ONLY a JSON array:
-[
-  { "id": "i1", "title": "...", "description": "...", "type": "trend" }
-]
-Use types: "trend" | "anomaly" | "correlation" | "distribution" | "summary".
+Provide a concise and readable output.
 `;
-
-    const raw = await this.callApi(prompt, 0.3, 500);
-
-    let parsed;
-    try {
-      parsed = JSON.parse(raw);
-    } catch {
-      throw new Error('API returned invalid JSON');
-    }
-
-    if (!Array.isArray(parsed)) throw new Error('API returned non-array insights');
-
-    return parsed.filter(
-      (item: any): item is Insight =>
-        typeof item.id === 'string' &&
-        typeof item.title === 'string' &&
-        typeof item.description === 'string' &&
-        ['trend', 'anomaly', 'correlation', 'distribution', 'summary'].includes(item.type)
-    );
+    return await this.callApi(prompt, 0.3, 500);
   }
 
   async answerQuestion(
