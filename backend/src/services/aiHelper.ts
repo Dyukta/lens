@@ -1,4 +1,5 @@
-import fetch from 'node-fetch'; // Remove if using Node 18+ with global fetch
+import 'dotenv/config'; // loads .env automatically
+import fetch from 'node-fetch'; // Node 18+ has fetch globally
 import { DataSummary, Insight, ChatHistoryItem } from '../types';
 
 interface ApiCandidate {
@@ -12,12 +13,13 @@ interface ApiResponse {
 export class DataAnalyzer {
   private apiUrl =
     'https://generativelanguage.googleapis.com/v1beta/models/text-bison-001:generateText';
-
-
+  private apiKey: string;
 
   constructor() {
+    // Load API key from environment variable
+    this.apiKey = process.env.GENERATIVE_API_KEY || '';
     if (!this.apiKey) {
-      throw new Error('API key is required');
+      throw new Error('API key is required. Set GENERATIVE_API_KEY in your .env file');
     }
   }
 
