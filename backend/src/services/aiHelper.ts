@@ -1,4 +1,3 @@
-import 'dotenv/config';
 import fetch from 'node-fetch'; // Remove if using Node 18+ with global fetch
 import { DataSummary, Insight, ChatHistoryItem } from '../types';
 
@@ -13,10 +12,11 @@ interface ApiResponse {
 export class DataAnalyzer {
   private apiUrl =
     'https://generativelanguage.googleapis.com/v1beta/models/text-bison-001:generateText';
-  private apiKey: string;
 
-  constructor(apiKey?: string) {
-    this.apiKey = apiKey || process.env.GENERATIVE_API_KEY || '';
+  // Hardcoded API key
+  private apiKey = 'YOUR_HARDCODED_API_KEY_HERE';
+
+  constructor() {
     if (!this.apiKey) {
       throw new Error('API key is required');
     }
@@ -71,9 +71,7 @@ export class DataAnalyzer {
 
     if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
 
-    // Cast response to ApiResponse to satisfy TypeScript
     const data = (await res.json()) as ApiResponse;
-
     return data.candidates?.[0]?.content ?? '';
   }
 
