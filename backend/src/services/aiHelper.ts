@@ -25,7 +25,6 @@ export class DataAnalyzer {
         }),
       });
 
-      // retry on 503
       if (res.status === 503) {
         if (attempt < retries) {
           await new Promise((r) => setTimeout(r, 1500 * (attempt + 1)));
@@ -38,7 +37,6 @@ export class DataAnalyzer {
 
       const data: any = await res.json();
 
-      // check for blocked/filtered response
       const candidate = data?.candidates?.[0];
       if (!candidate) {
         const reason = data?.promptFeedback?.blockReason;
